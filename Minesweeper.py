@@ -1,5 +1,9 @@
 import pygame
 
+import random #import random to randomly pick mine locations
+
+
+
 pygame.init()
 
 # Screen setup
@@ -25,7 +29,7 @@ WIN = "win"
 LOSE = "lose"
 
 state = MENU  # start in the main menu
-counter_value = 0  # adjustable number in main menu
+counter_value = 10  # adjustable number in main menu
 
 
 # Button Class
@@ -65,6 +69,20 @@ quit_button = Button(WIDTH//2 - 100, 280, 200, 60, "Quit", RED, (255, 0, 0))
 plus_button = Button(WIDTH//2 + 60, 360, 60, 60, "+", GRAY, (150, 150, 150))
 minus_button = Button(WIDTH//2 - 120, 360, 60, 60, "-", GRAY, (150, 150, 150))
 
+#define the grid that the thing will be mapped to
+grid = [[0 for i in range(10)] for j in range(10)]
+
+#reset the grid back to the orinogal state
+for i in range(10):
+    for j in range(10):
+        grid[i][j] = 0
+
+squarePickList = [0 for i in range(100)]
+
+#put 1 number for every 100 square
+for i in range (100):
+    squarePickList[i]  = i
+
 # Main Game Loop
 running = True
 while running:
@@ -81,15 +99,41 @@ while running:
             if start_button.is_clicked(event):
                 state = PLAYING
                 # Add the game code here, or a call to some other module
+                print("Generate board")
+
+
+                for i in range(counter_value):
+                    #pick a random value
+                    randomIndex = random.randrange(len(squarePickList))
+                    #remove it so it doesn't get picked again
+                    randomValue = squarePickList.pop(randomIndex)        
+                    #extract the row and column
+                    row=randomValue%10
+                    column =randomValue//10
+                    #print("Row: " , row, " - Coloumn: ", column, " - Item: " , i+1, " - Deleted: " , randomValue, " - Deleted2: " , squarePickList[randomValue-i])
+                    #mark the item as a mine
+                    grid[row][column] = int(3)
+            
+
+                    #print(grid)
+
+                print(grid)
+
+
+                #generate a list of squares that can be chosen
+
+
 
             elif quit_button.is_clicked(event):
                 running = False  # Quit game
 
             elif plus_button.is_clicked(event):
-                counter_value += 1  # Increase # bombs in menu
+                if(counter_value < 20):
+                    counter_value += 1  # Increase # bombs in menu
 
             elif minus_button.is_clicked(event):
-                counter_value -= 1  # Decrease # bombs in menu
+                if(counter_value > 10):
+                    counter_value -= 1  # Decrease # bombs in menu
 
         # PLAYING state logic
         elif state == PLAYING:
@@ -105,6 +149,20 @@ while running:
         elif state in [WIN, LOSE]:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 state = MENU
+
+
+                #reset the grid back to the orinogal state
+                for i in range(10):
+                    for j in range(10):
+                        grid[i][j] = 0
+
+                #reset the pick list
+                squarePickList = [0 for i in range(100)]
+                for i in range (100):
+                    squarePickList[i]  = i                        
+
+
+
                 # Code here to reset values when going back to the menu
 
     # Drawing (depends on state)
