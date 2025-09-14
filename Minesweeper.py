@@ -17,6 +17,7 @@ BLACK = (0, 0, 0)
 GREEN = (0, 200, 0)
 RED = (200, 0, 0)
 GRAY = (100, 100, 100)
+LIGHT_GRAY = (200, 200, 200)
 
 # Fonts
 font = pygame.font.Font(None, 60)      # Bigger font for titles
@@ -31,6 +32,14 @@ LOSE = "lose"
 state = MENU  # start in the main menu
 counter_value = 10  # adjustable number in main menu
 
+#grid settings
+GRID_SIZE = 10
+TILE_SIZE = 40
+GRID_START_X = (WIDTH - GRID_SIZE * TILE_SIZE) //2
+GRID_START_Y = 50
+
+#Sprites
+flag_sprite = pygame.image.load("flag.png")
 
 # Button Class
 class Button:
@@ -72,16 +81,63 @@ minus_button = Button(WIDTH//2 - 120, 360, 60, 60, "-", GRAY, (150, 150, 150))
 #define the grid that the thing will be mapped to
 grid = [[0 for i in range(10)] for j in range(10)]
 
+#track revealed tiles
+revealed = [[False for i in range(10)] for j in range(10)]
+
+#track flagged tiles
+flagged = [[False for i in range(10)] for j in range(10)]
+
 #reset the grid back to the orinogal state
 for i in range(10):
     for j in range(10):
         grid[i][j] = 0
+        revealed[i][j] = False
+        flagged[i][j] = False
 
 squarePickList = [0 for i in range(100)]
 
 #put 1 number for every 100 square
 for i in range (100):
     squarePickList[i]  = i
+
+def get_grid_pos(mouse_x, mouse_y):
+    #converts mouse coordinates to grid positions
+    #check if click was in grid area
+    if (GRID_START_X <= mouse_x <= GRID_START_X + GRID_SIZE * TILE_SIZE and
+        GRID_START_Y <= mouse_y <= GRID_START_Y + GRID_SIZE * TILE_SIZE):
+        
+        #calculate which row and column was clicked
+        col = (mouse_x - GRID_START_X) // TILE_SIZE
+        row = (mouse_y - GRID_START_Y) // TILE_SIZE
+        
+        #make sure of valid grid position
+        if 0 <= row < GRID_SIZE and 0 <= col < GRID_SIZE:
+            return row, col
+    return None, None  #result if click was out of grid
+
+def draw_grid():
+    #draws the grid
+    for row in range(GRID_SIZE):
+        for col in range(GRID_SIZE):
+            x = GRID_START_X + col * TILE_SIZE
+            y = GRID_START_Y + row * TILE_SIZE
+            
+            #draw tile background
+            if revealed[row][col]:
+                if grid[row][col] == 3:  #tile turns red if revealed tile is a mine
+                    pygame.draw.rect(screen, RED, (x, y, TILE_SIZE, TILE_SIZE))
+                else: #otherwise the revealed tile turns light gray
+                    pygame.draw.rect(screen, LIGHT_GRAY, (x, y, TILE_SIZE, TILE_SIZE))
+            else: #when not revealed tile is gray
+                pygame.draw.rect(screen, GRAY, (x, y, TILE_SIZE, TILE_SIZE))
+            
+            #draw tile border
+            pygame.draw.rect(screen, BLACK, (x, y, TILE_SIZE, TILE_SIZE), 2)
+            
+            if flagged[row][col] and not revealed[row][col]:
+                #load flag sprite when tile is flagged
+                if flag_sprite:
+                    screen.blit(flag_sprite, (x + 10, y + 10))
 
 # Main Game Loop
 running = True
@@ -137,6 +193,19 @@ while running:
 
         # PLAYING state logic
         elif state == PLAYING:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = event.pos #get coordinates of mouse
+                row, col = get_grid_pos(mouse_x, mouse_y) #convert coordinates to grid position
+
+                if row is not None and col is not None: #check if click is in grid
+                    if event.button == 1: #a left click
+                        if not flagged[row][col]:#can't reveal a flagged tile
+                            revealed[row][col] = True #reveal tile
+
+                    elif event.button == 3:#a right click
+                        if not revealed[row][col]:
+                            flagged[row][col] = not flagged[row][col]#able to toggle flag
+                            
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w:
                     state = WIN
@@ -155,6 +224,8 @@ while running:
                 for i in range(10):
                     for j in range(10):
                         grid[i][j] = 0
+                        revealed[i][j] = False
+                        flagged[i][j] = False
 
                 #reset the pick list
                 squarePickList = [0 for i in range(100)]
@@ -184,11 +255,11 @@ while running:
 
     # What should be displayed during each state
     elif state == PLAYING:
-        play_surf = font.render("Game Playing...", True, WHITE)
-        screen.blit(play_surf, (WIDTH//2 - play_surf.get_width()//2, HEIGHT//2))
-
-        info_surf = small_font.render("Press W to Win, L to Lose", True, GREEN)
-        screen.blit(info_surf, (WIDTH//2 - info_surf.get_width()//2, HEIGHT//2 + 50))
+        draw_grid()
+        
+        # Instructions
+        info_surf = small_font.render("Left click: Reveal | Right click: Flag | W: Win | L: Lose", True, WHITE)
+        screen.blit(info_surf, (10, HEIGHT - 30))
 
     elif state == WIN:
         win_surf = font.render("You Win!", True, GREEN)
@@ -209,3 +280,4 @@ while running:
 
 # Exit
 pygame.quit()
+
