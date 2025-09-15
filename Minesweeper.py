@@ -2,7 +2,7 @@ import pygame
 
 import random #import random to randomly pick mine locations
 
-
+from collections import deque # Queue for flood-fill
 
 pygame.init()
 
@@ -37,6 +37,11 @@ GRID_SIZE = 10
 TILE_SIZE = 40
 GRID_START_X = (WIDTH - GRID_SIZE * TILE_SIZE) //2
 GRID_START_Y = 50
+
+MINE = 3
+DIRS8 = [(-1,-1), (-1,0),(-1,1),
+         (0,-1),        (0,1),
+         (1,-1), (1,0), (1,1)]
 
 #Sprites
 flag_sprite = pygame.image.load("flag.png")
@@ -87,7 +92,10 @@ revealed = [[False for i in range(10)] for j in range(10)]
 #track flagged tiles
 flagged = [[False for i in range(10)] for j in range(10)]
 
-#reset the grid back to the orinogal state
+counts = [[0]*GRID_SIZE for _ in range(GRID_SIZE)]
+first_click_done = False
+
+#reset the grid back to the original state
 for i in range(10):
     for j in range(10):
         grid[i][j] = 0
@@ -105,11 +113,11 @@ def get_grid_pos(mouse_x, mouse_y):
     #check if click was in grid area
     if (GRID_START_X <= mouse_x <= GRID_START_X + GRID_SIZE * TILE_SIZE and
         GRID_START_Y <= mouse_y <= GRID_START_Y + GRID_SIZE * TILE_SIZE):
-        
+
         #calculate which row and column was clicked
         col = (mouse_x - GRID_START_X) // TILE_SIZE
         row = (mouse_y - GRID_START_Y) // TILE_SIZE
-        
+
         #make sure of valid grid position
         if 0 <= row < GRID_SIZE and 0 <= col < GRID_SIZE:
             return row, col
@@ -121,23 +129,95 @@ def draw_grid():
         for col in range(GRID_SIZE):
             x = GRID_START_X + col * TILE_SIZE
             y = GRID_START_Y + row * TILE_SIZE
-            
+
             #draw tile background
             if revealed[row][col]:
-                if grid[row][col] == 3:  #tile turns red if revealed tile is a mine
+                if grid[row][col] == MINE:  #tile turns red if revealed tile is a mine
                     pygame.draw.rect(screen, RED, (x, y, TILE_SIZE, TILE_SIZE))
                 else: #otherwise the revealed tile turns light gray
                     pygame.draw.rect(screen, LIGHT_GRAY, (x, y, TILE_SIZE, TILE_SIZE))
+                    n = counts[row][col] # Show numbers on revealed tiles
+                    if n > 0:
+                        num_surf = small_font.render(str(n), True, WHITE)
+                        screen.blit(num_surf, (x + TILE_SIZE//2 - num_surf.get_width()//2,
+                                               y + TILE_SIZE//2 - num_surf.get_height()//2))
             else: #when not revealed tile is gray
                 pygame.draw.rect(screen, GRAY, (x, y, TILE_SIZE, TILE_SIZE))
-            
+
             #draw tile border
             pygame.draw.rect(screen, BLACK, (x, y, TILE_SIZE, TILE_SIZE), 2)
-            
+
             if flagged[row][col] and not revealed[row][col]:
                 #load flag sprite when tile is flagged
                 if flag_sprite:
                     screen.blit(flag_sprite, (x + 10, y + 10))
+
+# True while cell is inside the 10x10 grid
+def in_bounds(r, c):
+    return 0 <= r < GRID_SIZE and 0 <= c < GRID_SIZE
+
+# Use a matrix of adjacent-mine counts for each cell to show numbers and decide how far to auto-reveal
+def compute_counts(grid):
+    counts = [[0]*GRID_SIZE for _ in range (GRID_SIZE)]
+    for r in range(GRID_SIZE):
+        for c in range(GRID_SIZE):
+            if grid[r][c] == MINE:
+                counts[r][c] = -1
+                continue
+            n = 0
+            for dr, dc in DIRS8:
+                nr, nc = r + dr, c + dc
+                if in_bounds(nr, nc) and grid[nr][nc] == MINE:
+                    n += 1
+            counts[r][c] = n
+    return counts
+
+# Move the mine in the case it is landed on during the first click
+def ensure_first_click_safe(fr, fc, grid):
+    if grid[fr][fc] != MINE:
+        return
+    for r in range(GRID_SIZE):
+        for c in range(GRID_SIZE):
+            if grid[r][c] != MINE and (r, c) != (fr, fc):
+                grid[fr][fc] = 0
+                grid[r][c] = MINE
+                return
+
+# Reveal the starting cell if its count is 0, breadth-first reveal adjacent zeros and border numbers.
+def flood_reveal(sr, sc, grid, counts, revealed, flagged):
+    if revealed[sr][sc] or flagged[sr][sc]:
+        return
+    revealed[sr][sc] = True
+    if counts[sr][sc] != 0:
+        return
+    q = deque([(sr, sc)])
+    while q:
+        r, c = q.popleft()
+        for dr, dc in DIRS8:
+            nr, nc = r + dr, c + dc
+            if not in_bounds(nr, nc):
+                continue
+            if flagged[nr][nc] or grid[nr][nc] == MINE:
+                continue
+            if not revealed[nr][nc]:
+                revealed[nr][nc] = True
+                if counts[nr][nc] == 0:
+                    q.append((nr, nc))
+
+# Reveal every mine cell upon loss
+def reveal_all_mines(grid, revealed):
+    for r in range(GRID_SIZE):
+        for c in range(GRID_SIZE):
+            if grid[r][c] == MINE:
+                revealed[r][c] = True
+
+# All non-mine tiles are revealed - win condition.
+def check_win(grid, revealed):
+    for r in range(GRID_SIZE):
+        for c in range(GRID_SIZE):
+            if grid[r][c] != MINE and not revealed[r][c]:
+                return False
+    return True
 
 # Main Game Loop
 running = True
@@ -162,14 +242,17 @@ while running:
                     #pick a random value
                     randomIndex = random.randrange(len(squarePickList))
                     #remove it so it doesn't get picked again
-                    randomValue = squarePickList.pop(randomIndex)        
+                    randomValue = squarePickList.pop(randomIndex)
                     #extract the row and column
                     row=randomValue%10
                     column =randomValue//10
                     #print("Row: " , row, " - Coloumn: ", column, " - Item: " , i+1, " - Deleted: " , randomValue, " - Deleted2: " , squarePickList[randomValue-i])
                     #mark the item as a mine
                     grid[row][column] = int(3)
-            
+
+                # Compute numbers for drawing/reveal logic
+                counts = compute_counts(grid)
+                first_click_done = False
 
                     #print(grid)
 
@@ -200,12 +283,23 @@ while running:
                 if row is not None and col is not None: #check if click is in grid
                     if event.button == 1: #a left click
                         if not flagged[row][col]:#can't reveal a flagged tile
-                            revealed[row][col] = True #reveal tile
-
+                            if not first_click_done: # Ensure a mine isn't initially clicked
+                                ensure_first_click_safe(row, col, grid)
+                                counts = compute_counts(grid)
+                                first_click_done = True
+                            if grid[row][col] == MINE: # Check for loss
+                                revealed[row][col] = True
+                                reveal_all_mines(grid, revealed)
+                                state = LOSE
+                            else: # Check win condition
+                                flood_reveal(row, col, grid, counts, revealed, flagged)
+                                revealed[row][col] = True
+                                if check_win(grid, revealed):
+                                    state = WIN
                     elif event.button == 3:#a right click
                         if not revealed[row][col]:
                             flagged[row][col] = not flagged[row][col]#able to toggle flag
-                            
+
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w:
                     state = WIN
@@ -220,7 +314,7 @@ while running:
                 state = MENU
 
 
-                #reset the grid back to the orinogal state
+                #reset the grid back to the original state
                 for i in range(10):
                     for j in range(10):
                         grid[i][j] = 0
@@ -230,9 +324,13 @@ while running:
                 #reset the pick list
                 squarePickList = [0 for i in range(100)]
                 for i in range (100):
-                    squarePickList[i]  = i                        
+                    squarePickList[i]  = i
 
+                # Reset mine counts
+                counts = [[0]*GRID_SIZE for _ in range(GRID_SIZE)]
 
+                # Reset first click check
+                first_click_done = False
 
                 # Code here to reset values when going back to the menu
 
@@ -256,7 +354,7 @@ while running:
     # What should be displayed during each state
     elif state == PLAYING:
         draw_grid()
-        
+
         # Instructions
         info_surf = small_font.render("Left click: Reveal | Right click: Flag | W: Win | L: Lose", True, WHITE)
         screen.blit(info_surf, (10, HEIGHT - 30))
