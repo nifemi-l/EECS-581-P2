@@ -36,7 +36,7 @@ counter_value = 10  # adjustable number in main menu
 GRID_SIZE = 10
 TILE_SIZE = 40
 GRID_START_X = (WIDTH - GRID_SIZE * TILE_SIZE) //2
-GRID_START_Y = 50
+GRID_START_Y = 100
 
 MINE = 3
 DIRS8 = [(-1,-1), (-1,0),(-1,1),
@@ -124,6 +124,22 @@ def get_grid_pos(mouse_x, mouse_y):
     return None, None  #result if click was out of grid
 
 def draw_grid():
+    #draws column letters A-J
+    for col in range(GRID_SIZE):
+        x = GRID_START_X + col * TILE_SIZE
+        y = GRID_START_Y - 25
+        letter = chr(ord('A') + col)
+        col_letters = small_font.render(letter, True, WHITE)
+        screen.blit(col_letters, (x + TILE_SIZE//2 - col_letters.get_width()//2, y))
+
+    #draws row numbers 1-10
+    for row in range(GRID_SIZE):
+        x = GRID_START_X - 30
+        y = GRID_START_Y + row * TILE_SIZE
+        number = str(row + 1)
+        row_numbers = small_font.render(number, True, WHITE)
+        screen.blit(row_numbers, (x, y + TILE_SIZE//2 - row_numbers.get_height()//2))
+             
     #draws the grid
     for row in range(GRID_SIZE):
         for col in range(GRID_SIZE):
@@ -151,6 +167,10 @@ def draw_grid():
                 #load flag sprite when tile is flagged
                 if flag_sprite:
                     screen.blit(flag_sprite, (x + 10, y + 10))
+#returns remaining amount of flags (total mines on grid - tiles flags)
+def get_remaining_flags():
+    flags_used = sum(sum(1 for c in row if c) for row in flagged)
+    return counter_value -  flags_used
 
 # True while cell is inside the 10x10 grid
 def in_bounds(r, c):
@@ -330,15 +350,10 @@ while running:
                                     state = WIN
                     elif event.button == 3:#a right click
                         if not revealed[row][col]:
-                            flagged[row][col] = not flagged[row][col]#able to toggle flag
-
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_w:
-                    state = WIN
-                    # Win condition code
-                elif event.key == pygame.K_l:
-                    state = LOSE
-                    # Lose condition code
+                            if flagged[row][col]:
+                                flagged[row][col] = False
+                            elif get_remaining_flags() > 0:
+                                flagged[row][col] = True #flag only if flags remain
 
         # WIN and LOSE state logic
         elif state in [WIN, LOSE]:
@@ -392,12 +407,15 @@ while running:
         draw_grid()
 
         # Instructions
-        info_surf = small_font.render("Left click: Reveal | Right click: Flag | W: Win | L: Lose", True, WHITE)
+        info_surf = small_font.render("Left click: Reveal | Right click: Flag", True, WHITE)
         screen.blit(info_surf, (10, HEIGHT - 30))
 
         #playing status
         playinginfo = small_font.render("Current Status: Playing", True, WHITE)
         screen.blit(playinginfo, (10, 10))
+
+        reaming_flags_text = small_font.render(f"Flags Remaining: {get_remaining_flags()}", True, WHITE)
+        screen.blit(reaming_flags_text, (550, 10))
 
     elif state == WIN:
         win_surf = font.render("You Win!", True, GREEN)
@@ -426,4 +444,5 @@ while running:
 
 # Exit
 pygame.quit()
+
 
