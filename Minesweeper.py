@@ -172,16 +172,48 @@ def compute_counts(grid):
             counts[r][c] = n
     return counts
 
-# Move the mine in the case it is landed on during the first click
+# Ensures the player clicks on a blank space, and if not, regenerates the board until that space is blank
 def ensure_first_click_safe(fr, fc, grid):
-    if grid[fr][fc] != MINE:
-        return
-    for r in range(GRID_SIZE):
-        for c in range(GRID_SIZE):
-            if grid[r][c] != MINE and (r, c) != (fr, fc):
-                grid[fr][fc] = 0
-                grid[r][c] = MINE
-                return
+    #allows usage of global variables
+    global counts, squarePickList
+
+    #while the grid the player clicks on does not contain a mine and is not bordering any mines
+    while not ((grid[fr][fc] != MINE) and (counts[fr][fc] == 0)):
+        print("Generate board")
+
+        #reset the grid
+        for r in range(GRID_SIZE):
+            for c in range(GRID_SIZE):
+                grid[r][c] = 0
+
+        #resets pick list
+        squarePickList = [i for i in range(GRID_SIZE * GRID_SIZE)]
+
+        #code from the main loop for board generation, just done again
+        for i in range(counter_value):
+            #pick a random value
+            randomIndex = random.randrange(len(squarePickList))
+            #remove it so it doesn't get picked again
+            randomValue = squarePickList.pop(randomIndex)
+            #extract the row and column
+            row=randomValue%10
+            column =randomValue//10
+            #print("Row: " , row, " - Coloumn: ", column, " - Item: " , i+1, " - Deleted: " , randomValue, " - Deleted2: " , squarePickList[randomValue-i])
+            #mark the item as a mine
+            grid[row][column] = int(3)
+
+        # Compute numbers for drawing/reveal logic
+        counts = compute_counts(grid)
+
+        #print(grid)
+
+        print(grid)
+
+
+    return
+
+        
+    
 
 # Reveal the starting cell if its count is 0, breadth-first reveal adjacent zeros and border numbers.
 def flood_reveal(sr, sc, grid, counts, revealed, flagged):
@@ -350,6 +382,10 @@ while running:
         # Draw counter value in between + and -
         counter_surf = font.render(str(counter_value), True, WHITE)
         screen.blit(counter_surf, (WIDTH//2 - counter_surf.get_width()//2, 370))
+    
+        #playing status
+        playinginfo = small_font.render("Current Status: MENU", True, WHITE)
+        screen.blit(playinginfo, (10, 10))
 
     # What should be displayed during each state
     elif state == PLAYING:
@@ -359,6 +395,10 @@ while running:
         info_surf = small_font.render("Left click: Reveal | Right click: Flag | W: Win | L: Lose", True, WHITE)
         screen.blit(info_surf, (10, HEIGHT - 30))
 
+        #playing status
+        playinginfo = small_font.render("Current Status: Playing", True, WHITE)
+        screen.blit(playinginfo, (10, 10))
+
     elif state == WIN:
         win_surf = font.render("You Win!", True, GREEN)
         screen.blit(win_surf, (WIDTH//2 - win_surf.get_width()//2, HEIGHT//2))
@@ -366,12 +406,20 @@ while running:
         info_surf = small_font.render("Click anywhere to return to Menu", True, WHITE)
         screen.blit(info_surf, (WIDTH//2 - info_surf.get_width()//2, HEIGHT//2 + 50))
 
+        #playing status
+        playinginfo = small_font.render("Current Status: WIN", True, WHITE)
+        screen.blit(playinginfo, (10, 10))
+
     elif state == LOSE:
         lose_surf = font.render("You Lose!", True, RED)
         screen.blit(lose_surf, (WIDTH//2 - lose_surf.get_width()//2, HEIGHT//2))
 
         info_surf = small_font.render("Click anywhere to return to Menu", True, WHITE)
         screen.blit(info_surf, (WIDTH//2 - info_surf.get_width()//2, HEIGHT//2 + 50))
+
+        #playing status
+        playinginfo = small_font.render("Current Status: LOSE", True, WHITE)
+        screen.blit(playinginfo, (10, 10))
 
     # Update screen
     pygame.display.flip()
