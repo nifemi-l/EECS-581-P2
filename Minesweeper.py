@@ -261,16 +261,18 @@ def flood_reveal(sr, sc, grid, counts, revealed, flagged):
     q = deque([(sr, sc)])
     while q:
         #iterate until the deque is empty
+        #Take the next tile (r,c)
         r, c = q.popleft()
+        #Check all possible neighboring tiles around(r,c) using DIRS8 offest locations
         for dr, dc in DIRS8:
-            nr, nc = r + dr, c + dc
-            if not in_bounds(nr, nc):
+            nr, nc = r + dr, c + dc #Add the value of each offset position to the location of (r,c)
+            if not in_bounds(nr, nc): #Check the potential neighboring tile exsists on the grid
                 continue
-            if flagged[nr][nc] or grid[nr][nc] == MINE:
+            if flagged[nr][nc] or grid[nr][nc] == MINE:#Check the potential neighboring tile isn't already falgged or a mine prior to reveal
                 continue
-            if not revealed[nr][nc]:
+            if not revealed[nr][nc]: #If this neighboring tile isn't revealed, reveal it
                 revealed[nr][nc] = True
-                if counts[nr][nc] == 0:
+                if counts[nr][nc] == 0: #iIf it's also a 0 tiles, add it to the queue for continueing the flood-reveal
                     q.append((nr, nc))
 
 # Reveal every mine cell upon loss
