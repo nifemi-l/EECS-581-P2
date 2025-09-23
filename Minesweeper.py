@@ -15,102 +15,23 @@ import os # access visual asset path
 
 from collections import deque  # Queue for flood-fill
 
-pygame.init()  # start pygame
 
-clock = pygame.time.Clock() # for smooth animation
-
-# Screen setup
-WIDTH, HEIGHT = 800, 600  # seight height and width of the screen
-screen = pygame.display.set_mode((WIDTH, HEIGHT))  # create the screen
-pygame.display.set_caption("Minesweeper")  # title the program
-
-# Colors
-WHITE = (255, 255, 255)  # define white on the RGB scale
-BLACK = (0, 0, 0)  # define black on the RGB scale
-GREEN = (0, 200, 0)  # define green on the RGB scale
-RED = (200, 0, 0)  # define red on the RGB scale
-DARK_RED = (150, 20, 20) # define darker red for mine background
-GRAY = (100, 100, 100)  # define grey on the RGB scale
-LIGHT_GRAY = (200, 200, 200)  # define light grey on the RGB scale
-CONFETTI_COLORS = [(255, 99, 132), (255, 205, 86), (75, 192, 192), (54, 162, 235), (153, 102, 255), (255, 159, 64)] # define colors for win scenario
-
-# Fonts
-font = pygame.font.Font(None, 60)  # Bigger font for titles
-small_font = pygame.font.Font(None, 36)  # Smaller font for buttons/text
-
-# Game states
-MENU = "menu"  # define the menu state
-PLAYING = "playing"  # define the playing state
-WIN = "win"  # define the winning state
-LOSE = "lose"  # define the losing state
+from settings import (
+    clock, screen, WIDTH, HEIGHT,
+    WHITE, BLACK, GREEN, RED, DARK_RED, GRAY, LIGHT_GRAY, CONFETTI_COLORS,
+    font, small_font,
+    MENU, PLAYING, WIN, LOSE,
+    GRID_SIZE, TILE_SIZE, GRID_START_X, GRID_START_Y,
+    MINE, DIRS8, CONFETTI_TARGET
+)
+from button import Button
+from game_assets import flag_sprite, mines_sprite, numbers_sprites
 
 state = MENU  # start in the main menu
 counter_value = 10  # adjustable number in main menu
 
-# grid settings
-GRID_SIZE = 10  # set each blank space between squares to be 10 pixels
-TILE_SIZE = 40  # set each square to be 40 pixels
-GRID_START_X = (WIDTH - GRID_SIZE * TILE_SIZE) // 2  # calucate the middle of the board so that the board is centred
-GRID_START_Y = 100  # place the top of the board slightly from the top
-
-MINE = 3  # define mine as 3 (the value of an array should be 3 when a mine is placed there)
-DIRS8 = [(-1, -1), (-1, 0), (-1, 1),
-         # create a matrix to easily be able to refference the adjactent tiles for recusive uncovering.
-         (0, -1), (0, 1),
-         (1, -1), (1, 0), (1, 1)]
-
-CONFETTI_TARGET = 180 # Set number of particles to generation
-
-
-# define visual asset path variables
-BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
-ASSETS_DIR = os.path.join(BASE_DIR, "assets")
-NUM_DIR    = os.path.join(ASSETS_DIR, "numbers")
-
-# Convert visual assets to pygame surface
-def load_image(path):
-    image = pygame.image.load(path).convert_alpha()
-    return image
-
-# Sprites
-flag_sprite = load_image(os.path.join(ASSETS_DIR, "flag.png")) # load in the flag visual
-mines_sprite = load_image(os.path.join(ASSETS_DIR, "mines.png"))
-# load in the mines visual # load each number visual for possibly 1-8 neighboring mines and build a list
-numbers_sprites = {n: load_image(os.path.join(NUM_DIR, f"{n}.png")) for n in range(1, 9)}
-
 # global confetti list
 confetti = []
-
-# Button Class
-class Button:
-    def __init__(self, x, y, w, h, text, color, hover_color, text_color=WHITE):
-        """Create a button with position, size, colors, and label text."""
-        self.rect = pygame.Rect(x, y, w, h)
-        self.text = text
-        self.color = color
-        self.hover_color = hover_color
-        self.text_color = text_color
-
-    def draw(self, surface, font):
-        """Draw the button (changes color when hovered)."""
-        mouse_pos = pygame.mouse.get_pos()
-        is_hovered = self.rect.collidepoint(mouse_pos)
-
-        # Draw rectangle (with hover effect)
-        pygame.draw.rect(surface, self.hover_color if is_hovered else self.color, self.rect, border_radius=10)
-
-        # Draw text centered inside the button
-        text_surf = font.render(self.text, True, self.text_color)
-        text_rect = text_surf.get_rect(center=self.rect.center)
-        surface.blit(text_surf, text_rect)
-
-    def is_clicked(self, event):
-        """Check if the button is clicked with left mouse button."""
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.rect.collidepoint(event.pos):
-                return True
-        return False
-
 
 # Buttons for the main menu
 start_button = Button(WIDTH // 2 - 100, 200, 200, 60, "Start Game", GREEN, (0, 255, 0))  # create sstart button
@@ -128,20 +49,23 @@ revealed = [[False for i in range(10)] for j in range(10)]
 flagged = [[False for i in range(10)] for j in range(10)]
 
 counts = [[0] * GRID_SIZE for _ in range(GRID_SIZE)]
-first_click_done = False
-
-# reset the grid back to the original state
-for i in range(10):  # iterate over rows
-    for j in range(10):  # iterate over colums
-        grid[i][j] = 0  # set value to 0
-        revealed[i][j] = False  # set it to not revealed
-        flagged[i][j] = False  # set it to not flagged
 
 squarePickList = [0 for i in range(100)]  # allow the board to pick any item to have a mine on it
 
-# put 1 number for every 100 square
-for i in range(100):
-    squarePickList[i] = i
+first_click_done = False
+
+def setup_grid():
+    # reset the grid back to the original state
+    for i in range(10):  # iterate over rows
+        for j in range(10):  # iterate over colums
+            grid[i][j] = 0  # set value to 0
+            revealed[i][j] = False  # set it to not revealed
+            flagged[i][j] = False  # set it to not flagged
+
+
+    # put 1 number for every 100 square
+    for i in range(100):
+        squarePickList[i] = i
 
 
 # converts mouse coordinates to grid positions
@@ -548,4 +472,5 @@ while running:
 
 # Exit
 pygame.quit()
+
 
