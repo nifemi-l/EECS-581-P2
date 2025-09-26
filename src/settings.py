@@ -13,6 +13,7 @@ pygame.display.set_caption("Minesweeper")  # title the program
 # Colors
 WHITE = (255, 255, 255)  # define white on the RGB scale
 BLACK = (0, 0, 0)  # define black on the RGB scale
+BLUE = (0, 0, 255)  # define blue on the RGB scale
 GREEN = (0, 200, 0)  # define green on the RGB scale
 RED = (200, 0, 0)  # define red on the RGB scale
 DARK_RED = (150, 20, 20) # define darker red for mine background
@@ -44,6 +45,7 @@ DIRS8 = [(-1, -1), (-1, 0), (-1, 1),
          (1, -1), (1, 0), (1, 1)]
 
 CONFETTI_TARGET = 180 # Set number of particles to generation
+
 
 
 # define visual asset path variables
