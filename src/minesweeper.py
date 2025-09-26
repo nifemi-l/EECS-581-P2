@@ -284,7 +284,9 @@ def draw_confetti(surface):
         surface.fill(p["color"], (int(p["x"]), int(p["y"]), int(p["size"]), int(p["size"])))
 
 # Main Game Loop
+setup_grid() # Setup the grid
 running = True
+
 while running:
     dt = clock.tick(60) / 1000.0 # seconds since last frame
 
