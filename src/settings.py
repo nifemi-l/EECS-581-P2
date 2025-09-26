@@ -47,6 +47,7 @@ CONFETTI_TARGET = 180 # Set number of particles to generation
 
 
 # define visual asset path variables
-BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
-ASSETS_DIR = os.path.join(BASE_DIR, "assets")
-NUM_DIR    = os.path.join(ASSETS_DIR, "numbers")
+# Get the project root directory (one level up from the src directory)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ASSETS_DIR = os.path.join(PROJECT_ROOT, "assets")
+NUM_DIR = os.path.join(ASSETS_DIR, "numbers")
