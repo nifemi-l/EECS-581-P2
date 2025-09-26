@@ -8,24 +8,22 @@
 # Created by Nevan Snider on Sept 3rd, with contributions from Evan Rogerson, Spencer Rodenberg, Kyle Whitmer, and Karsten Wolter
 
 import pygame  # import pygame, the main GUI we used in order to create images and track mouse clicks.
-
 import random  # import random to randomly pick mine locations
-
-import os # access visual asset path
-
+import os # Access visual asset path
 from collections import deque  # Queue for flood-fill
-
+from button import Button
+from game_assets import flag_sprite, mines_sprite, numbers_sprites, load_circular_profile
+from auth import AuthContext  # simple local auth (token/user.json)
+from pfp_helper import save_profile_image  # copy chosen image to assets
 
 from settings import (
     clock, screen, WIDTH, HEIGHT,
-    WHITE, BLACK, GREEN, RED, DARK_RED, GRAY, LIGHT_GRAY, CONFETTI_COLORS,
+    WHITE, BLACK, GREEN, RED, DARK_RED, GRAY, LIGHT_GRAY, CONFETTI_COLORS, BLUE,
     font, small_font,
     MENU, PLAYING, WIN, LOSE,
     GRID_SIZE, TILE_SIZE, GRID_START_X, GRID_START_Y,
-    MINE, DIRS8, CONFETTI_TARGET
+    MINE, DIRS8, CONFETTI_TARGET, ASSETS_DIR
 )
-from button import Button
-from game_assets import flag_sprite, mines_sprite, numbers_sprites
 
 state = MENU  # start in the main menu
 counter_value = 10  # adjustable number in main menu
@@ -33,11 +31,41 @@ counter_value = 10  # adjustable number in main menu
 # global confetti list
 confetti = []
 
-# Buttons for the main menu
-start_button = Button(WIDTH // 2 - 100, 200, 200, 60, "Start Game", GREEN, (0, 255, 0))  # create sstart button
-quit_button = Button(WIDTH // 2 - 100, 280, 200, 60, "Quit", RED, (255, 0, 0))  # create quit button
-plus_button = Button(WIDTH // 2 + 60, 360, 60, 60, "+", GRAY, (150, 150, 150))  # create add mine button
-minus_button = Button(WIDTH // 2 - 120, 360, 60, 60, "-", GRAY, (150, 150, 150))  # create remove mine button
+# Load the auth context to manage token/username/pfp
+auth = AuthContext()
+
+PROFILE_DIAMETER = 56  # profile picture diameter
+PROFILE_MARGIN = 10    # margin from edge
+
+def resolve_profile_path():  # Pick user pfp if logged in, else guest
+    # Check if the user is logged in
+    if auth.is_logged_in():
+        # Try to get the user's profile picture path, or use an empty string if not set
+        p = auth.get_pfp_path() or ""
+        # If a path exists and the file exists on disk, return it
+        if p and os.path.exists(p):
+            return p
+    # If not logged in or no valid pfp, return the default profile image path
+    return os.path.join(ASSETS_DIR, "images", "default_profile.jpg")
+
+# Load the initial avatar surface using the resolved profile path and the wanted diameter
+profile_surface = load_circular_profile(resolve_profile_path(), PROFILE_DIAMETER)  # Load initial avatar
+
+# Buffer to hold the username input during signup
+signup_input = ""  # Username buffer during signup
+
+# Buffer to hold the path input during set profile picture
+setpfp_input = ""  # path buffer during set pfp
+setpfp_error = ""  # Error message when set pfp path is invalid
+
+# Buttons for the main menu (shown conditionally by login state)
+start_button = Button(WIDTH // 2 - 100, 200, 200, 60, "Start Game", GREEN, (0, 255, 0))  # Start
+sign_in_create_button = Button(WIDTH // 2 - 100, 270, 200, 60, "Sign In / Create", BLUE, (32, 96, 255))  # Sign in or create
+change_pfp_button = Button(WIDTH // 2 - 100, 270, 200, 60, "Change PFP", GRAY, (150, 150, 150))  # set pfp
+logout_button = Button(WIDTH // 2 - 100, 340, 200, 60, "Logout", RED, (255, 0, 0))  # Logout
+quit_button = Button(WIDTH // 2 - 100, 410, 200, 60, "Quit", RED, (255, 0, 0))  # Quit
+plus_button = Button(WIDTH // 2 + 60, 470, 60, 60, "+", GRAY, (150, 150, 150))  # Inc bombs
+minus_button = Button(WIDTH // 2 - 120, 470, 60, 60, "-", GRAY, (150, 150, 150))  # Dec bombs
 
 # define the grid that the thing will be mapped to
 grid = [[0 for i in range(10)] for j in range(10)]
@@ -58,17 +86,17 @@ def setup_grid():
     # reset the grid back to the original state
     for i in range(10):  # iterate over rows
         for j in range(10):  # iterate over colums
-            grid[i][j] = 0  # set value to 0
-            revealed[i][j] = False  # set it to not revealed
-            flagged[i][j] = False  # set it to not flagged
+            grid[i][j] = 0  # Set value to 0
+            revealed[i][j] = False  # Set it to not revealed
+            flagged[i][j] = False  # Set it to not flagged
 
 
     # put 1 number for every 100 square
     for i in range(100):
-        squarePickList[i] = i
+        squarePickList[i] = i # Set the item to the index
 
 
-# converts mouse coordinates to grid positions
+# Converts mouse coordinates to grid positions
 def get_grid_pos(mouse_x, mouse_y):
     # converts mouse coordinates to grid positions
     # check if click was in grid area
@@ -79,13 +107,13 @@ def get_grid_pos(mouse_x, mouse_y):
         col = (mouse_x - GRID_START_X) // TILE_SIZE
         row = (mouse_y - GRID_START_Y) // TILE_SIZE
 
-        # make sure of valid grid position
+        # Make sure of valid grid position
         if 0 <= row < GRID_SIZE and 0 <= col < GRID_SIZE:
             return row, col
-    return None, None  # result if click was out of grid
+    return None, None  # Result if click was out of grid
 
 
-# function to drawr the grid visuaully so the user can see it
+# Function to drawr the grid visuaully so the user can see it
 def draw_grid():
     # draws column letters A-J
     for col in range(GRID_SIZE):
@@ -119,7 +147,7 @@ def draw_grid():
                 else:  # otherwise the revealed tile turns light gray
                     pygame.draw.rect(screen, LIGHT_GRAY, (x, y, TILE_SIZE, TILE_SIZE))
                     n = counts[row][col]  # Show numbers on revealed tiles
-                    if n > 0:  # generate a number on tiles that have nearby mines
+                    if n > 0:  # Generate a number on tiles that have nearby mines
                         screen.blit(numbers_sprites[n], (x + 10, y + 10))
             else:  # when not revealed tile is gray
                 pygame.draw.rect(screen, GRAY, (x, y, TILE_SIZE, TILE_SIZE))
@@ -128,7 +156,7 @@ def draw_grid():
             pygame.draw.rect(screen, BLACK, (x, y, TILE_SIZE, TILE_SIZE), 2)
 
             if flagged[row][col] and not revealed[row][col]:
-                # load flag sprite when tile is flagged
+                # Load flag sprite when tile is flagged
                 if flag_sprite:
                     screen.blit(flag_sprite, (x + 10, y + 10))
 
@@ -328,6 +356,18 @@ while running:
                 # generate a list of squares that can be chosen
 
 
+            # logged-in only: change pfp
+            elif auth.is_logged_in() and change_pfp_button.is_clicked(event):
+                state = "set_pfp"  # path input state
+                setpfp_input = ""
+            # logged-in only: logout
+            elif auth.is_logged_in() and logout_button.is_clicked(event):
+                auth.logout()
+                profile_surface = load_circular_profile(resolve_profile_path(), PROFILE_DIAMETER)
+            # logged-out only: sign in or create
+            elif (not auth.is_logged_in()) and sign_in_create_button.is_clicked(event):
+                state = "signup"  # username input state
+                signup_input = ""
             # quit the game if the user presses quit
             elif quit_button.is_clicked(event):
                 running = False  # Quit game
@@ -375,6 +415,59 @@ while running:
                             elif get_remaining_flags() > 0:
                                 flagged[row][col] = True  # flag only if flags remain
 
+        # SIGNUP state
+        elif state == "signup":
+            if event.type == pygame.KEYDOWN:
+                # Submit on Enter
+                if event.key == pygame.K_RETURN:
+                    if signup_input.strip():
+                        # Issue a token for the user
+                        auth.issue_token(signup_input.strip())
+                        # Load the user's profile picture
+                        profile_surface = load_circular_profile(resolve_profile_path(), PROFILE_DIAMETER)
+                        state = MENU
+                # Go back on '0' without changes
+                elif event.key == pygame.K_0:
+                    state = MENU
+                # Backspace
+                elif event.key == pygame.K_BACKSPACE:
+                    signup_input = signup_input[:-1]
+                # Regular character input
+                else:
+                    if event.unicode.isprintable():
+                        # Add the input to the buffer
+                        signup_input += event.unicode
+
+        # SET_PFP state
+        elif state == "set_pfp":
+            if event.type == pygame.KEYDOWN:
+                # Submit on Enter
+                if event.key == pygame.K_RETURN:
+                    # Save the user's profile picture under a username-specific filename
+                    username = auth.get_username() or "guest"
+                    saved = save_profile_image(setpfp_input.strip(), username)
+                    if saved:
+                        # Set the user's profile picture path
+                        auth.set_pfp_path(saved)
+                        # Load the user's profile picture
+                        profile_surface = load_circular_profile(resolve_profile_path(), PROFILE_DIAMETER)
+                        state = MENU
+                        setpfp_error = ""  # clear any previous error on success
+                    else:
+                        # Show an error and stay on this screen
+                        setpfp_error = "Invalid path or unreadable image. Try again or press 0 to go back."
+                # Go back on '0'
+                elif event.key == pygame.K_0:
+                    state = MENU
+                # Backspace
+                elif event.key == pygame.K_BACKSPACE:
+                    setpfp_input = setpfp_input[:-1]
+                # Regular character input (clear error when typing)
+                else:
+                    if event.unicode.isprintable():
+                        setpfp_input += event.unicode
+                        setpfp_error = ""
+
         # WIN and LOSE state logic
         elif state in [WIN, LOSE]:
             # check for win/lose everythime the user clicks (no need to waste resources as the board state only changes when clicks occur)
@@ -406,21 +499,89 @@ while running:
     if state == MENU:
         # Title
         title_surf = font.render("Minesweeper", True, WHITE)
-        screen.blit(title_surf, (WIDTH // 2 - title_surf.get_width() // 2, 100))
+        title_x = WIDTH // 2 - title_surf.get_width() // 2
+        title_y = 60
+        screen.blit(title_surf, (title_x, title_y))
+
+        # Build vertical stack of primary buttons (made it dynamic and dependent on the login state)
+        primary_buttons = [start_button]
+        if auth.is_logged_in():
+            # if the user is logged in, add the change pfp and logout buttons
+            primary_buttons += [change_pfp_button, logout_button]
+        else:
+            # If the user is not logged in, add the sign in or create button
+            primary_buttons += [sign_in_create_button]
+        # Add the quit button
+        primary_buttons.append(quit_button)
+
+        # Layout values
+        stack_spacing = 18
+        # Set the top y position of the buttons
+        stack_top_y = title_y + title_surf.get_height() + 40
+        # Set the width of the buttons
+        button_width = 200
+        # Set the height of the buttons
+        button_height = 60
+        # Set the x position of the buttons
+        stack_x = WIDTH // 2 - button_width // 2
+
+        # Position buttons in a tidy vertical stack
+        current_y = stack_top_y
+        for btn in primary_buttons:
+            # Set the position of the buttons
+            btn.rect.topleft = (stack_x, current_y)
+            # Set the y position of the buttons
+            current_y += button_height + stack_spacing
+
+        # Bottom controls row: center minus, counter, plus near bottom
+        bottom_margin = 40
+        # Set the y position of the buttons
+        row_y = HEIGHT - bottom_margin - button_height // 2
+        # Set the x position of the buttons
+        side_gap = 110
+        # Set the position of the buttons
+        minus_button.rect.center = (WIDTH // 2 - side_gap, row_y)
+        # Set the position of the buttons
+        plus_button.rect.center = (WIDTH // 2 + side_gap, row_y)
 
         # Draw buttons
-        start_button.draw(screen, small_font)
-        quit_button.draw(screen, small_font)
-        plus_button.draw(screen, font)
+        for btn in primary_buttons:
+            # Draw the buttons
+            btn.draw(screen, small_font)
+        # Draw the minus button
         minus_button.draw(screen, font)
+        # Draw the plus button
+        plus_button.draw(screen, font)
 
-        # Draw counter value in between + and -
+        # Counter centered between +/-
         counter_surf = font.render(str(counter_value), True, WHITE)
-        screen.blit(counter_surf, (WIDTH // 2 - counter_surf.get_width() // 2, 370))
+        # Set the x position of the counter
+        counter_x = WIDTH // 2 - counter_surf.get_width() // 2
+        # Set the y position of the counter
+        counter_y = row_y - counter_surf.get_height() // 2
+        # Draw the counter
+        screen.blit(counter_surf, (counter_x, counter_y))
 
         # playing status
         playinginfo = small_font.render("Current Status: MENU", True, WHITE)
         screen.blit(playinginfo, (10, 10))
+
+        # Profile picture (top-right)
+        if profile_surface:
+            # Set the x position of the profile picture
+            px = WIDTH - PROFILE_MARGIN - PROFILE_DIAMETER
+            # Set the y position of the profile picture
+            py = PROFILE_MARGIN
+            # Draw the profile picture
+            screen.blit(profile_surface, (px, py))
+            # Draw username under avatar when logged in
+            if auth.is_logged_in():
+                uname = auth.get_username() or ""
+                if uname:
+                    name_surf = small_font.render(uname, True, WHITE)
+                    name_x = px + PROFILE_DIAMETER // 2 - name_surf.get_width() // 2
+                    name_y = py + PROFILE_DIAMETER + 6
+                    screen.blit(name_surf, (name_x, name_y))
 
     # What should be displayed during each state
     elif state == PLAYING:
@@ -433,9 +594,50 @@ while running:
         # playing status
         playinginfo = small_font.render("Current Status: Playing", True, WHITE)
         screen.blit(playinginfo, (10, 10))
+        # Draw the profile picture in the top-right corner during the PLAYING state
+        if profile_surface:  # Check if the profile image surface was loaded successfully
+            px = WIDTH - PROFILE_MARGIN - PROFILE_DIAMETER  # Calculate the x-coordinate for the profile picture (right-aligned with margin)
+            py = PROFILE_MARGIN  # Set the y-coordinate for the profile picture (top margin)
+            screen.blit(profile_surface, (px, py))  # Draw the profile picture at the calculated position on the screen
+            # Draw username under avatar when logged in
+            if auth.is_logged_in():
+                uname = auth.get_username() or ""
+                if uname:
+                    name_surf = small_font.render(uname, True, WHITE)
+                    name_x = px + PROFILE_DIAMETER // 2 - name_surf.get_width() // 2
+                    name_y = py + PROFILE_DIAMETER + 6
+                    screen.blit(name_surf, (name_x, name_y))
 
-        reaming_flags_text = small_font.render(f"Flags Remaining: {get_remaining_flags()}", True, WHITE)
-        screen.blit(reaming_flags_text, (550, 10))
+        remaining_flags_text = small_font.render(f"Flags Remaining: {get_remaining_flags()}", True, WHITE)
+        x = WIDTH - remaining_flags_text.get_width() - 10
+        y = HEIGHT - remaining_flags_text.get_height() - 10
+        screen.blit(remaining_flags_text, (x, y))
+
+    # SIGNUP screen UI
+    elif state == "signup":
+        # Set the prompt
+        prompt = small_font.render("Enter username (Enter submit, 0 back):", True, WHITE)
+        # Set the x position of the prompt
+        screen.blit(prompt, (WIDTH // 2 - prompt.get_width() // 2, HEIGHT // 2 - 40))
+        # Set the typed input
+        typed = small_font.render(signup_input, True, WHITE)
+        # Draw the typed input
+        screen.blit(typed, (WIDTH // 2 - typed.get_width() // 2, HEIGHT // 2))
+
+    # SET_PFP screen UI
+    elif state == "set_pfp":
+        # Set the prompt
+        prompt = small_font.render("Enter image path (Enter submit, 0 back):", True, WHITE)
+        # Draw the prompt
+        screen.blit(prompt, (WIDTH // 2 - prompt.get_width() // 2, HEIGHT // 2 - 60))
+        # Set the typed input
+        typed = small_font.render(setpfp_input, True, WHITE)
+        # Draw the typed input
+        screen.blit(typed, (WIDTH // 2 - typed.get_width() // 2, HEIGHT // 2 - 20))
+        # If there is an error, show it in red below the input
+        if setpfp_error:
+            error_surf = small_font.render(setpfp_error, True, RED)
+            screen.blit(error_surf, (WIDTH // 2 - error_surf.get_width() // 2, HEIGHT // 2 + 20))
 
     # if the user wins
     elif state == WIN:
