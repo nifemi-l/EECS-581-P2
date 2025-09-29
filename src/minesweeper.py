@@ -64,7 +64,7 @@ setpfp_error = ""  # Error message when set pfp path is invalid
 
 # Buttons for the main menu (shown conditionally by login state)
 start_button = Button(WIDTH // 2 - 100, 170, 200, 60, "Start Game", GREEN, (0, 255, 0))  # Start
-select_difficulty_button = Button(WIDTH // 2 - 100, 240, 200, 60, "Settings", PURPLE, (255, 0, 255)) # Difficulty selection
+settings_button = Button(WIDTH // 2 - 100, 240, 200, 60, "Settings", PURPLE, (255, 0, 255)) # Settings
 easy_button = Button(WIDTH // 2 - 100, 240, 200, 60, "Easy", GREEN, (0, 255, 0)) # Difficulty menu: easy
 medium_button = Button(WIDTH // 2 - 100, 310, 200, 60, "Medium", (200, 200, 0), (255, 255, 0)) # Difficulty menu: medium
 hard_button = Button(WIDTH // 2 - 100, 380, 200, 60, "Hard", RED, (255, 0, 0)) # Difficulty menu: hard
@@ -395,10 +395,10 @@ while running:
                 if (counter_value > 10):
                     counter_value -= 1  # Decrease # bombs in menu
 
-            elif select_difficulty_button.is_clicked(event):
-                state = "select_difficulty"
+            elif settings_button.is_clicked(event):
+                state = "settings"
 
-        elif state == "select_difficulty":
+        elif state == "settings":
             if easy_button.is_clicked(event):
                 difficulty = EASY
             if medium_button.is_clicked(event):
@@ -552,8 +552,8 @@ while running:
 
         # Build vertical stack of primary buttons (made it dynamic and dependent on the login state)
         primary_buttons = [start_button]
-        # Add the difficulty select button
-        primary_buttons.append(select_difficulty_button)
+        # Add the settings button
+        primary_buttons.append(settings_button)
         if auth.is_logged_in():
             # if the user is logged in, add the change pfp and logout buttons
             primary_buttons += [change_pfp_button, logout_button]
@@ -640,7 +640,7 @@ while running:
                     name_y = py + PROFILE_DIAMETER + 6
                     screen.blit(name_surf, (name_x, name_y))
 
-    elif state == "select_difficulty":
+    elif state == "settings":
             # difficulty display
             difficulty_display = small_font.render("SELECT AI DIFFICULTY", True, WHITE)
             screen.blit(difficulty_display, (WIDTH // 2 - 300, 60))
