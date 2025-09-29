@@ -15,6 +15,7 @@ from button import Button
 from game_assets import flag_sprite, mines_sprite, numbers_sprites, load_circular_profile
 from auth import AuthContext  # simple local auth (token/user.json)
 from pfp_helper import save_profile_image  # copy chosen image to assets
+from sfx import SFX
 
 from settings import (
     clock, screen, WIDTH, HEIGHT,
@@ -320,6 +321,8 @@ def draw_confetti(surface):
 
 # Main Game Loop
 setup_grid() # Setup the grid
+sfx = SFX()
+
 running = True
 
 while running:
@@ -327,6 +330,9 @@ while running:
 
     # Fill background black every frame
     screen.fill(BLACK)
+
+    # Start background music
+    sfx.start_bgmusic()
 
     # Handle events/inputs
     for event in pygame.event.get():
@@ -418,22 +424,28 @@ while running:
                                 counts = compute_counts(grid)
                                 first_click_done = True
                             if grid[row][col] == MINE:  # Check for loss
+                                sfx.play_bomb_clicked()
                                 revealed[row][col] = True
                                 reveal_all_mines(grid, revealed)  # reveal all mines on loss
                                 state = LOSE
+                                sfx.play_loss()
                             else:  # Check win condition
+                                sfx.play_square_revealed()
                                 flood_reveal(row, col, grid, counts, revealed, flagged)
                                 revealed[row][col] = True
                                 if check_win(grid, revealed):
                                     state = WIN
+                                    sfx.play_win()
                                     start_confetti() # add confetti animation
                     elif event.button == 3:  # a right click
                         # check that the flagged tile isn't revealed
                         if not revealed[row][col]:
                             # if the user has flags flag it but if they don't have flags don't do anything
                             if flagged[row][col]:
+                                sfx.play_flag_popped()
                                 flagged[row][col] = False
                             elif get_remaining_flags() > 0:
+                                sfx.play_flag_placed()
                                 flagged[row][col] = True  # flag only if flags remain
 
         # SIGNUP state
