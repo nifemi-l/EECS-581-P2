@@ -590,7 +590,7 @@ while running:
         screen.blit(playinginfo, (10, 10))
 
         # difficulty display
-        difficulty_setting = small_font.render(f"Difficulty: {difficulty.upper()}", True, WHITE)
+        difficulty_setting = small_font.render(f"AI Difficulty: {difficulty.upper()}", True, WHITE)
         screen.blit(difficulty_setting, (10, 40))
 
         # Profile picture (top-right)
