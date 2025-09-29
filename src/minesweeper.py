@@ -22,11 +22,13 @@ from settings import (
     font, small_font,
     MENU, PLAYING, WIN, LOSE,
     GRID_SIZE, TILE_SIZE, GRID_START_X, GRID_START_Y,
-    MINE, DIRS8, CONFETTI_TARGET, ASSETS_DIR
+    MINE, DIRS8, CONFETTI_TARGET, ASSETS_DIR,
+    EASY, MEDIUM, HARD
 )
 
 state = MENU  # start in the main menu
 counter_value = 10  # adjustable number in main menu
+difficulty = MEDIUM # default to medium
 
 # global confetti list
 confetti = []
@@ -60,13 +62,17 @@ setpfp_error = ""  # Error message when set pfp path is invalid
 
 # Buttons for the main menu (shown conditionally by login state)
 start_button = Button(WIDTH // 2 - 100, 170, 200, 60, "Start Game", GREEN, (0, 255, 0))  # Start
-select_difficulty = Button(WIDTH // 2 - 100, 240, 200, 60, "Select Difficulty", PURPLE, (255, 0, 255)) # Difficulty selection
+select_difficulty_button = Button(WIDTH // 2 - 100, 240, 200, 60, "Select Difficulty", PURPLE, (255, 0, 255)) # Difficulty selection
+easy_button = Button(WIDTH // 2 - 100, 240, 200, 60, "Easy", GREEN, (0, 255, 0)) # Difficulty menu: easy
+medium_button = Button(WIDTH // 2 - 100, 310, 200, 60, "Medium", (0, 200, 200), (0, 255, 255)) # Difficulty menu: medium
+hard_button = Button(WIDTH // 2 - 100, 380, 200, 60, "Hard", RED, (255, 0, 0)) # Difficulty menu: hard
 sign_in_create_button = Button(WIDTH // 2 - 100, 310, 200, 60, "Sign In / Create", BLUE, (32, 96, 255))  # Sign in or create
 change_pfp_button = Button(WIDTH // 2 - 100, 310, 200, 60, "Change PFP", GRAY, (150, 150, 150))  # set pfp
 logout_button = Button(WIDTH // 2 - 100, 380, 200, 60, "Logout", RED, (255, 0, 0))  # Logout
 quit_button = Button(WIDTH // 2 - 100, 450, 200, 60, "Quit", RED, (255, 0, 0))  # Quit
 plus_button = Button(WIDTH // 2 + 60, 550, 60, 60, "+", GRAY, (150, 150, 150))  # Inc bombs
 minus_button = Button(WIDTH // 2 - 120, 550, 60, 60, "-", GRAY, (150, 150, 150))  # Dec bombs
+
 
 # define the grid that the thing will be mapped to
 grid = [[0 for i in range(10)] for j in range(10)]
@@ -383,6 +389,20 @@ while running:
                 if (counter_value > 10):
                     counter_value -= 1  # Decrease # bombs in menu
 
+            elif select_difficulty_button.is_clicked(event):
+                state = "select_difficulty"
+
+        elif state == "select_difficulty":
+            if easy_button.is_clicked(event):
+                difficulty = EASY
+                state = MENU
+            if medium_button.is_clicked(event):
+                difficulty = MEDIUM
+                state = MENU
+            if hard_button.is_clicked(event):
+                difficulty = HARD
+                state = MENU
+
         # PLAYING state logic
         elif state == PLAYING:
             # check if the user presses any mouse button
@@ -507,7 +527,7 @@ while running:
         # Build vertical stack of primary buttons (made it dynamic and dependent on the login state)
         primary_buttons = [start_button]
         # Add the difficulty select button
-        primary_buttons.append(select_difficulty)
+        primary_buttons.append(select_difficulty_button)
         if auth.is_logged_in():
             # if the user is logged in, add the change pfp and logout buttons
             primary_buttons += [change_pfp_button, logout_button]
@@ -569,6 +589,10 @@ while running:
         playinginfo = small_font.render("Current Status: MENU", True, WHITE)
         screen.blit(playinginfo, (10, 10))
 
+        # difficulty display
+        difficulty_setting = small_font.render(f"Difficulty: {difficulty.upper()}", True, WHITE)
+        screen.blit(difficulty_setting, (10, 40))
+
         # Profile picture (top-right)
         if profile_surface:
             # Set the x position of the profile picture
@@ -585,6 +609,21 @@ while running:
                     name_x = px + PROFILE_DIAMETER // 2 - name_surf.get_width() // 2
                     name_y = py + PROFILE_DIAMETER + 6
                     screen.blit(name_surf, (name_x, name_y))
+
+    elif state == "select_difficulty":
+            # difficulty display
+            difficulty_display = small_font.render("SELECT AI DIFFICULTY", True, WHITE)
+            screen.blit(difficulty_display, (WIDTH // 2 - 130, 60))
+
+            # Set the position of the buttons
+            easy_button.rect.center = (WIDTH // 2, 160)
+            easy_button.draw(screen, small_font)
+            # Set the position of the buttons
+            medium_button.rect.center = (WIDTH // 2, 240)
+            medium_button.draw(screen, small_font)
+            # Set the position of the buttons
+            hard_button.rect.center = (WIDTH // 2, 320)
+            hard_button.draw(screen, small_font)
 
     # What should be displayed during each state
     elif state == PLAYING:

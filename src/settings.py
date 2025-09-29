@@ -32,6 +32,10 @@ PLAYING = "playing"  # define the playing state
 WIN = "win"  # define the winning state
 LOSE = "lose"  # define the losing state
 
+# Difficulties
+EASY = "easy"
+MEDIUM = "medium"
+HARD = "hard"
 
 # grid settings
 GRID_SIZE = 10  # set each blank space between squares to be 10 pixels
