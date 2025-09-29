@@ -17,6 +17,7 @@ BLUE = (0, 0, 255)  # define blue on the RGB scale
 GREEN = (0, 200, 0)  # define green on the RGB scale
 RED = (200, 0, 0)  # define red on the RGB scale
 DARK_RED = (150, 20, 20) # define darker red for mine background
+PURPLE = (200, 0, 200) # define purple on the RGB scale
 GRAY = (100, 100, 100)  # define grey on the RGB scale
 LIGHT_GRAY = (200, 200, 200)  # define light grey on the RGB scale
 CONFETTI_COLORS = [(255, 99, 132), (255, 205, 86), (75, 192, 192), (54, 162, 235), (153, 102, 255), (255, 159, 64)] # define colors for win scenario
@@ -31,6 +32,10 @@ PLAYING = "playing"  # define the playing state
 WIN = "win"  # define the winning state
 LOSE = "lose"  # define the losing state
 
+# Difficulties
+EASY = "easy"
+MEDIUM = "medium"
+HARD = "hard"
 
 # grid settings
 GRID_SIZE = 10  # set each blank space between squares to be 10 pixels
