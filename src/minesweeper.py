@@ -23,12 +23,14 @@ from settings import (
     MENU, PLAYING, WIN, LOSE,
     GRID_SIZE, TILE_SIZE, GRID_START_X, GRID_START_Y,
     MINE, DIRS8, CONFETTI_TARGET, ASSETS_DIR,
-    EASY, MEDIUM, HARD
+    EASY, MEDIUM, HARD,
+    AI_INTERACTIVE, AI_AUTOMATIC, AI_MANUAL
 )
 
 state = MENU  # start in the main menu
 counter_value = 10  # adjustable number in main menu
 difficulty = MEDIUM # default to medium
+mode = AI_INTERACTIVE # default to interactive mode
 
 # global confetti list
 confetti = []
@@ -62,10 +64,14 @@ setpfp_error = ""  # Error message when set pfp path is invalid
 
 # Buttons for the main menu (shown conditionally by login state)
 start_button = Button(WIDTH // 2 - 100, 170, 200, 60, "Start Game", GREEN, (0, 255, 0))  # Start
-select_difficulty_button = Button(WIDTH // 2 - 100, 240, 200, 60, "Select Difficulty", PURPLE, (255, 0, 255)) # Difficulty selection
+select_difficulty_button = Button(WIDTH // 2 - 100, 240, 200, 60, "Settings", PURPLE, (255, 0, 255)) # Difficulty selection
 easy_button = Button(WIDTH // 2 - 100, 240, 200, 60, "Easy", GREEN, (0, 255, 0)) # Difficulty menu: easy
-medium_button = Button(WIDTH // 2 - 100, 310, 200, 60, "Medium", (0, 200, 200), (0, 255, 255)) # Difficulty menu: medium
+medium_button = Button(WIDTH // 2 - 100, 310, 200, 60, "Medium", (200, 200, 0), (255, 255, 0)) # Difficulty menu: medium
 hard_button = Button(WIDTH // 2 - 100, 380, 200, 60, "Hard", RED, (255, 0, 0)) # Difficulty menu: hard
+mode_interactive_button = Button(WIDTH // 2 - 100, 420, 200, 60, "Interactive", (0, 200, 200), (0, 255, 255)) # Mode menu: interactive
+mode_automatic_button = Button(WIDTH // 2 - 100, 490, 200, 60, "Automatic", (0, 0, 200), (0, 0, 255)) # Mode menu: automatic
+mode_manual_button = Button(WIDTH // 2 - 100, 560, 200, 60, "Manual", (200, 0, 200), (255, 0, 255)) # Mode menu: manual
+settings_continue_button = Button(WIDTH // 2 - 100, 560, 200, 60, "Continue", (200, 200, 200), (255, 255, 255)) # Mode menu: manual
 sign_in_create_button = Button(WIDTH // 2 - 100, 310, 200, 60, "Sign In / Create", BLUE, (32, 96, 255))  # Sign in or create
 change_pfp_button = Button(WIDTH // 2 - 100, 310, 200, 60, "Change PFP", GRAY, (150, 150, 150))  # set pfp
 logout_button = Button(WIDTH // 2 - 100, 380, 200, 60, "Logout", RED, (255, 0, 0))  # Logout
@@ -395,12 +401,17 @@ while running:
         elif state == "select_difficulty":
             if easy_button.is_clicked(event):
                 difficulty = EASY
-                state = MENU
             if medium_button.is_clicked(event):
                 difficulty = MEDIUM
-                state = MENU
             if hard_button.is_clicked(event):
                 difficulty = HARD
+            if mode_interactive_button.is_clicked(event):
+                mode = AI_INTERACTIVE
+            if mode_automatic_button.is_clicked(event):
+                mode = AI_AUTOMATIC
+            if mode_manual_button.is_clicked(event):
+                mode = AI_MANUAL
+            if settings_continue_button.is_clicked(event):
                 state = MENU
 
         # PLAYING state logic
@@ -409,6 +420,21 @@ while running:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = event.pos  # get coordinates of mouse
                 row, col = get_grid_pos(mouse_x, mouse_y)  # convert coordinates to grid position
+
+                # AI Solver notes:
+                # based on difficulty, call the right AI function to "get a move". 
+                # We handle this one move at a time. 
+                # Proces:
+                #   - It is the AI's turn
+                #   - Ask AI solver for move (select based on difficulty)
+                #   - AI solver returns a row, col, and action to take
+                #   - We apply that action to the right row and col
+                #   - Move to next turn depending on mode (either player or AI again)
+                # More details:
+                # If it's the AI turn call:
+                #   ai_get_easy(grid) -> returns row, col, action
+                # else: behave as normal with player input
+                # we then apply the AI move here.
 
                 if row is not None and col is not None:  # check if click is in grid
                     if event.button == 1:  # a left click
@@ -591,7 +617,11 @@ while running:
 
         # difficulty display
         difficulty_setting = small_font.render(f"AI Difficulty: {difficulty.upper()}", True, WHITE)
-        screen.blit(difficulty_setting, (10, 40))
+        screen.blit(difficulty_setting, (10, 200))
+
+        # mode display
+        mode_setting = small_font.render(f"AI Mode: {mode.upper()}", True, WHITE)
+        screen.blit(mode_setting, (10, 240))
 
         # Profile picture (top-right)
         if profile_surface:
@@ -613,17 +643,45 @@ while running:
     elif state == "select_difficulty":
             # difficulty display
             difficulty_display = small_font.render("SELECT AI DIFFICULTY", True, WHITE)
-            screen.blit(difficulty_display, (WIDTH // 2 - 130, 60))
+            screen.blit(difficulty_display, (WIDTH // 2 - 300, 60))
+
+            # settings
+            spacing = 160
 
             # Set the position of the buttons
-            easy_button.rect.center = (WIDTH // 2, 160)
+            easy_button.rect.center = (WIDTH // 2 - spacing, 160)
             easy_button.draw(screen, small_font)
             # Set the position of the buttons
-            medium_button.rect.center = (WIDTH // 2, 240)
+            medium_button.rect.center = (WIDTH // 2 - spacing, 240)
             medium_button.draw(screen, small_font)
             # Set the position of the buttons
-            hard_button.rect.center = (WIDTH // 2, 320)
+            hard_button.rect.center = (WIDTH // 2 - spacing, 320)
             hard_button.draw(screen, small_font)
+
+            # mode display
+            mode_display = small_font.render("SELECT AI MODE", True, WHITE)
+            screen.blit(mode_display, (WIDTH // 2 + 60, 60))
+
+            # Set the position of the buttons
+            mode_interactive_button.rect.center = (WIDTH // 2 + spacing, 160)
+            mode_interactive_button.draw(screen, small_font)
+            # Set the position of the buttons
+            mode_automatic_button.rect.center = (WIDTH // 2 + spacing, 240)
+            mode_automatic_button.draw(screen, small_font)
+            # Set the position of the buttons
+            mode_manual_button.rect.center = (WIDTH // 2 + spacing, 320)
+            mode_manual_button.draw(screen, small_font)
+
+            # Output display
+            current_difficulty_display = small_font.render(f"Set to: {difficulty.upper()}", True, WHITE)
+            screen.blit(current_difficulty_display, (WIDTH // 2 - 260, 380))
+            current_mode_display = small_font.render(f"Set to: {mode.upper()}", True, WHITE)
+            screen.blit(current_mode_display, (WIDTH // 2 + 60, 380))
+
+            # Add the continue button   
+            settings_continue_button.rect.center = (WIDTH // 2, 480)
+            settings_continue_button.draw(screen, small_font)
+
 
     # What should be displayed during each state
     elif state == PLAYING:

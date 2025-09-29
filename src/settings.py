@@ -37,6 +37,11 @@ EASY = "easy"
 MEDIUM = "medium"
 HARD = "hard"
 
+# Mode
+AI_INTERACTIVE = "Interactive" # AI and player take turns
+AI_AUTOMATIC = "Automatic" # AI plays the entire game
+AI_MANUAL = "Manual" # Player only mode (no AI)
+
 # grid settings
 GRID_SIZE = 10  # set each blank space between squares to be 10 pixels
 TILE_SIZE = 40  # set each square to be 40 pixels
