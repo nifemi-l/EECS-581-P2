@@ -340,6 +340,7 @@ while running:
 
         # MENU state logic
         if state == MENU:
+            sfx.sfx_channel.stop()
             if start_button.is_clicked(event):
                 sfx.play_square_revealed()
                 state = PLAYING
