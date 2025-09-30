@@ -5,9 +5,12 @@ from settings import ASSETS_DIR, NUM_DIR, SOUND_DIR
 
 
 class SFX:
-    def __init__(self):
+    def __init__(self, mixer):
         self.sfx_channel = mixer.Channel(0)
+        self.sfx_channel.set_volume(0.75)
         self.music_channel = mixer.Channel(1)
+        mixer.set_reserved(1)
+        self.music_channel.set_volume(0.5)
 
         background_music_choice = random.choice(os.listdir(os.path.join(SOUND_DIR, "bgmusic")))
         print(f"{os.path.join(SOUND_DIR, "bgmusic", background_music_choice)}")
@@ -19,6 +22,10 @@ class SFX:
         self.win_sound = mixer.Sound(os.path.join(SOUND_DIR,"win.mp3"))
         self.square_revealed_sound = mixer.Sound(os.path.join(SOUND_DIR,"square-revealed.mp3"))
         self.flagg_popped_sound = mixer.Sound(os.path.join(SOUND_DIR, "flag-popped.mp3"))
+
+    def ensure_bgmusic(self):
+        if not self.music_channel.get_busy():
+            self.start_bgmusic()
 
     def play_flag_placed(self):
         self.sfx_channel.play(self.flag_placed_sound)
@@ -33,4 +40,6 @@ class SFX:
     def play_flag_popped(self):
         self.sfx_channel.play(self.flagg_popped_sound)
     def start_bgmusic(self):
-        self.music_channel.play(self.background_music)
+        self.music_channel.play(self.background_music, loops=-1)
+
+

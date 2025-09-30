@@ -8,6 +8,7 @@
 # Created by Nevan Snider on Sept 3rd, with contributions from Evan Rogerson, Spencer Rodenberg, Kyle Whitmer, and Karsten Wolter
 
 import pygame  # import pygame, the main GUI we used in order to create images and track mouse clicks.
+from pygame import mixer
 import random  # import random to randomly pick mine locations
 import os # Access visual asset path
 from collections import deque  # Queue for flood-fill
@@ -321,7 +322,8 @@ def draw_confetti(surface):
 
 # Main Game Loop
 setup_grid() # Setup the grid
-sfx = SFX()
+sfx = SFX(pygame.mixer)
+sfx.start_bgmusic()
 
 running = True
 
@@ -331,9 +333,6 @@ while running:
     # Fill background black every frame
     screen.fill(BLACK)
 
-    # Start background music
-    sfx.start_bgmusic()
-
     # Handle events/inputs
     for event in pygame.event.get():
         if event.type == pygame.QUIT:  # Close window
@@ -342,6 +341,7 @@ while running:
         # MENU state logic
         if state == MENU:
             if start_button.is_clicked(event):
+                sfx.play_square_revealed()
                 state = PLAYING
                 # Add the game code here, or a call to some other module
                 print("Generate board")
@@ -421,14 +421,14 @@ while running:
                         if not flagged[row][col]:  # can't reveal a flagged tile
                             if not first_click_done:  # Ensure a mine isn't initially clicked
                                 ensure_first_click_safe(row, col, grid)
+                                sfx.play_square_revealed()
                                 counts = compute_counts(grid)
                                 first_click_done = True
                             if grid[row][col] == MINE:  # Check for loss
-                                sfx.play_bomb_clicked()
+                                sfx.play_loss()
                                 revealed[row][col] = True
                                 reveal_all_mines(grid, revealed)  # reveal all mines on loss
                                 state = LOSE
-                                sfx.play_loss()
                             else:  # Check win condition
                                 sfx.play_square_revealed()
                                 flood_reveal(row, col, grid, counts, revealed, flagged)
