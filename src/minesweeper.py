@@ -39,6 +39,11 @@ confetti = []
 # Initialize the game timer 
 game_time = GameTimer()
 
+# High score notification variables
+show_high_score_notification = False  # Flag to show the notification
+notification_start_time = 0  # When the notification started
+NOTIFICATION_DURATION = 3.0  # How long to show notification in seconds
+
 # Load the auth context to manage token/username/pfp
 auth = AuthContext()
 
@@ -358,6 +363,54 @@ def draw_game_end_message(surface, win: bool):
         (WIDTH // 2 - return_surface.get_width() // 2, box_y + box_height - 40)
     )
 
+# Draw profile picture, username, and high score in the top-right corner
+def draw_profile_and_info(surface):
+    # If the profile surface is loaded, draw it in the top-right corner
+    if profile_surface:
+        # Set the x and y position of the profile picture
+        px = WIDTH - PROFILE_MARGIN - PROFILE_DIAMETER
+        py = PROFILE_MARGIN
+        surface.blit(profile_surface, (px, py)) # Draw the profile picture at the calculated position on the screen
+        
+        # Display username and high score below profile picture if logged in
+        if auth.is_logged_in():
+            uname = auth.get_username() or "" # Get the username of the logged in user
+            if uname:
+                name_surf = small_font.render(uname, True, WHITE) # Render the username as a surface
+                name_x = px + PROFILE_DIAMETER // 2 - name_surf.get_width() // 2
+                name_y = py + PROFILE_DIAMETER + 6 # Set the y position of the username
+                surface.blit(name_surf, (name_x, name_y))
+                
+                # Display high score below username in gold color
+                high_score = auth.get_high_score()
+                # Render the high score as a surface
+                score_surf = small_font.render(f"Best: {high_score}", True, (255, 215, 0))  # Gold color
+                # Set the x position of the high score
+                score_x = px + PROFILE_DIAMETER // 2 - score_surf.get_width() // 2
+                score_y = name_y + 30 # Set the y position of the high score
+                surface.blit(score_surf, (score_x, score_y))
+
+def draw_high_score_notification(surface):
+    # Draw a green notification box for new high score
+    message = "New High Score!"
+    message_surface = small_font.render(message, True, WHITE)
+    
+    # Box dimensions
+    box_width = 300
+    box_height = 60
+    box_x = WIDTH // 2 - box_width // 2 # Set the x position of the box as the middle of the screen
+    box_y = 50  # Set the y position of the box as the top of the screen
+    
+    # Draw green background box with white border
+    pygame.draw.rect(surface, (0, 180, 0), (box_x, box_y, box_width, box_height), border_radius=8)
+    pygame.draw.rect(surface, WHITE, (box_x, box_y, box_width, box_height), 2, border_radius=8)
+    
+    # Draw message centered in the box
+    surface.blit(
+        message_surface,
+        (WIDTH // 2 - message_surface.get_width() // 2, box_y + 20)
+    )
+
 # Main Game Loop
 setup_grid() # Setup the grid
 running = True
@@ -377,6 +430,10 @@ while running:
         if state == MENU:
             if start_button.is_clicked(event):
                 state = PLAYING
+                # Reset high score notification when starting new game
+                show_high_score_notification = False
+                # Reset the game timer
+                game_time.reset()
                 # Add the game code here, or a call to some other module
                 print("Generate board")
 
@@ -493,6 +550,23 @@ while running:
                                     start_confetti() # add confetti animation
                                     # Stop the game timer
                                     game_time.stop()
+                                    
+                                    # Calculate and update high score (only for logged-in users since they have a high score and guest doesn't)
+                                    if auth.is_logged_in():
+                                        # Get the elapsed time in seconds
+                                        elapsed_seconds = game_time.get_elapsed_time_seconds()
+                                        # Avoid division by zero
+                                        if elapsed_seconds > 0:
+                                            # Calculate the score
+                                            score = (counter_value * 1000) // elapsed_seconds  # Higher score = better
+                                            # Check if the score is a new high score
+                                            is_new_high = auth.set_high_score(score)
+                                            # Show notification if it's a new high score
+                                            if is_new_high:
+                                                # Show notification if it's a new high score (for 3s)
+                                                show_high_score_notification = True # Global toggle
+                                                # Set the notification start time to the current time
+                                                notification_start_time = pygame.time.get_ticks()
                     elif event.button == 3:  # a right click
                         # check that the flagged tile isn't revealed
                         if not revealed[row][col]:
@@ -582,6 +656,9 @@ while running:
                 # Reset the game timer
                 game_time.reset()
 
+                # Reset high score notification
+                show_high_score_notification = False
+
                 # Code here to reset values when going back to the menu
 
     # Drawing (depends on state)
@@ -666,22 +743,8 @@ while running:
         mode_setting = small_font.render(f"AI Mode: {mode.upper()}", True, WHITE)
         screen.blit(mode_setting, (10, 240))
 
-        # Profile picture (top-right)
-        if profile_surface:
-            # Set the x position of the profile picture
-            px = WIDTH - PROFILE_MARGIN - PROFILE_DIAMETER
-            # Set the y position of the profile picture
-            py = PROFILE_MARGIN
-            # Draw the profile picture
-            screen.blit(profile_surface, (px, py))
-            # Draw username under avatar when logged in
-            if auth.is_logged_in():
-                uname = auth.get_username() or ""
-                if uname:
-                    name_surf = small_font.render(uname, True, WHITE)
-                    name_x = px + PROFILE_DIAMETER // 2 - name_surf.get_width() // 2
-                    name_y = py + PROFILE_DIAMETER + 6
-                    screen.blit(name_surf, (name_x, name_y))
+        # Profile picture, username, and high score
+        draw_profile_and_info(screen)
 
     elif state == "settings":
             # difficulty display
@@ -744,19 +807,8 @@ while running:
             # Draw the game time info
             screen.blit(timer_info, (10, 40))
 
-        # Draw the profile picture in the top-right corner during the PLAYING state
-        if profile_surface:  # Check if the profile image surface was loaded successfully
-            px = WIDTH - PROFILE_MARGIN - PROFILE_DIAMETER  # Calculate the x-coordinate for the profile picture (right-aligned with margin)
-            py = PROFILE_MARGIN  # Set the y-coordinate for the profile picture (top margin)
-            screen.blit(profile_surface, (px, py))  # Draw the profile picture at the calculated position on the screen
-            # Draw username under avatar when logged in
-            if auth.is_logged_in():
-                uname = auth.get_username() or ""
-                if uname:
-                    name_surf = small_font.render(uname, True, WHITE)
-                    name_x = px + PROFILE_DIAMETER // 2 - name_surf.get_width() // 2
-                    name_y = py + PROFILE_DIAMETER + 6
-                    screen.blit(name_surf, (name_x, name_y))
+        # Profile picture, username, and high score
+        draw_profile_and_info(screen)
 
         remaining_flags_text = small_font.render(f"Flags Remaining: {get_remaining_flags()}", True, WHITE)
         x = WIDTH - remaining_flags_text.get_width() - 10
@@ -805,6 +857,19 @@ while running:
         # Display final time
         timer_text = small_font.render(f"Time: {game_time.get_elapsed_time()}", True, WHITE)
         screen.blit(timer_text, (10, 40))
+        
+        # Profile picture, username, and high score
+        draw_profile_and_info(screen)
+        
+        # Draw high score notification if active
+        if show_high_score_notification:
+            # Draw high score notification for a duration of 3 seconds
+            elapsed_notif = (pygame.time.get_ticks() - notification_start_time) / 1000.0
+            if elapsed_notif < NOTIFICATION_DURATION:
+                draw_high_score_notification(screen)
+            else:
+                # Hide notification after duration expires
+                show_high_score_notification = False
 
     # if the user loses
     elif state == LOSE:
@@ -820,6 +885,9 @@ while running:
         # Display final time
         timer_text = small_font.render(f"Time: {game_time.get_elapsed_time()}", True, WHITE)
         screen.blit(timer_text, (10, 40))
+        
+        # Profile picture, username, and high score
+        draw_profile_and_info(screen)
 
     # Update screen
     pygame.display.flip()

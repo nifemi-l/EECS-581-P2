@@ -51,6 +51,16 @@ class GameTimer:
         # Return the formatted time
         return formatted_time
 
+    def get_elapsed_time_seconds(self):
+        # Get elapsed time in seconds as an integer for score calculation
+        if self.running:
+            # Get the elapsed time in milliseconds
+            elapsed_time = pygame.time.get_ticks() - self.start_time
+        else:
+            # Use the final time
+            elapsed_time = self.final_time
+        return elapsed_time // 1000  # Convert milliseconds to seconds
+
     def reset(self):
         # Reset the start time
         self.start_time = 0
