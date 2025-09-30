@@ -8,6 +8,7 @@
 # Created by Nevan Snider on Sept 3rd, with contributions from Evan Rogerson, Spencer Rodenberg, Kyle Whitmer, and Karsten Wolter
 
 import pygame  # import pygame, the main GUI we used in order to create images and track mouse clicks.
+from pygame import mixer
 import random  # import random to randomly pick mine locations
 import os # Access visual asset path
 from collections import deque  # Queue for flood-fill
@@ -16,6 +17,7 @@ from game_assets import flag_sprite, mines_sprite, numbers_sprites, load_circula
 from auth import AuthContext  # simple local auth (token/user.json)
 from pfp_helper import save_profile_image  # copy chosen image to assets
 from game_timer import GameTimer # Track game time
+from sfx import SFX
 
 from settings import (
     clock, screen, WIDTH, HEIGHT,
@@ -413,6 +415,9 @@ def draw_high_score_notification(surface):
 
 # Main Game Loop
 setup_grid() # Setup the grid
+sfx = SFX(pygame.mixer)
+sfx.start_bgmusic()
+
 running = True
 
 while running:
@@ -428,7 +433,9 @@ while running:
 
         # MENU state logic
         if state == MENU:
+            sfx.sfx_channel.stop()
             if start_button.is_clicked(event):
+                sfx.play_square_revealed()
                 state = PLAYING
                 # Reset high score notification when starting new game
                 show_high_score_notification = False
@@ -532,21 +539,25 @@ while running:
                         if not flagged[row][col]:  # can't reveal a flagged tile
                             if not first_click_done:  # Ensure a mine isn't initially clicked
                                 ensure_first_click_safe(row, col, grid)
+                                sfx.play_square_revealed()
                                 counts = compute_counts(grid)
                                 first_click_done = True
                                 # Start the game timer
                                 game_time.start()
                             if grid[row][col] == MINE:  # Check for loss
+                                sfx.play_loss()
                                 revealed[row][col] = True
                                 reveal_all_mines(grid, revealed)  # reveal all mines on loss
                                 state = LOSE
                                 # Stop the game timer
                                 game_time.stop()
                             else:  # Check win condition
+                                sfx.play_square_revealed()
                                 flood_reveal(row, col, grid, counts, revealed, flagged)
                                 revealed[row][col] = True
                                 if check_win(grid, revealed):
                                     state = WIN
+                                    sfx.play_win()
                                     start_confetti() # add confetti animation
                                     # Stop the game timer
                                     game_time.stop()
@@ -572,8 +583,10 @@ while running:
                         if not revealed[row][col]:
                             # if the user has flags flag it but if they don't have flags don't do anything
                             if flagged[row][col]:
+                                sfx.play_flag_popped()
                                 flagged[row][col] = False
                             elif get_remaining_flags() > 0:
+                                sfx.play_flag_placed()
                                 flagged[row][col] = True  # flag only if flags remain
 
         # SIGNUP state
