@@ -1,7 +1,6 @@
 import os
-import random
 import pygame
-from settings import ASSETS_DIR, NUM_DIR, SOUND_DIR 
+from settings import ASSETS_DIR, NUM_DIR
 from PIL import Image, ImageDraw
 
 
