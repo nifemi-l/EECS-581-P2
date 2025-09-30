@@ -12,8 +12,8 @@ class AuthContext:
     {
       "current_user": "alice" | "",
       "users": {
-        "alice": {"token": "...", "pfp_path": "..."},
-        "bob": {"token": "...", "pfp_path": "..."}
+        "alice": {"token": "...", "pfp_path": "...", "high_score": 0},
+        "bob": {"token": "...", "pfp_path": "...", "high_score": 0}
       }
     }
     """
@@ -91,17 +91,56 @@ class AuthContext:
         if not cu:
             return
         users = self._store.setdefault("users", {})
-        rec = users.setdefault(cu, {"token": "", "pfp_path": ""})
+        rec = users.setdefault(cu, {"token": "", "pfp_path": "", "high_score": 0})
         rec["pfp_path"] = path
         self._save_user()
+
+    def get_high_score(self):
+        # Get the current user's high score from the store
+        cu = self._store.get("current_user") or ""
+        # Get the users dictionary
+        users = self._store.get("users", {})
+        # If the current user exists and the users dictionary is a dictionary, get the record for the current user
+        if cu and isinstance(users, dict):
+            # Get the record for the current user
+            rec = users.get(cu) or {}
+            # Get the high score from the record
+            score = rec.get("high_score", 0)
+            # If the high score is an integer, return it, otherwise return 0
+            return score if isinstance(score, int) else 0
+        return 0
+
+    def set_high_score(self, score: int) -> bool:
+        # Update high score if new score is better, returns True if it's a new high score
+        cu = self._store.get("current_user") or ""
+        # If the current user does not exist, return False
+        if not cu:
+            return False
+        users = self._store.setdefault("users", {})
+        # Get the record for the current user
+        rec = users.setdefault(cu, {"token": "", "pfp_path": "", "high_score": 0})
+        # Get the current high score from the record
+        current_high = rec.get("high_score", 0)
+        # If the new score is greater than the current high score, update the high score and return True
+        if score > current_high:
+            # Update the high score in the record
+            rec["high_score"] = score
+            # Save the user to the store
+            self._save_user()
+            return True
+        return False
 
     def issue_token(self, username: str) -> str:
         # create or refresh the user record, set as current, and store a token
         token = uuid.uuid4().hex
         users = self._store.setdefault("users", {})
-        rec = users.setdefault(username, {"token": "", "pfp_path": ""})
+        # Create a record for the new user
+        rec = users.setdefault(username, {"token": "", "pfp_path": "", "high_score": 0})
+        # Set the token for the new user
         rec["token"] = token
+        # Set the current user to the new user
         self._store["current_user"] = username
+        # Save the user to the store
         self._save_user()
         return token
 
