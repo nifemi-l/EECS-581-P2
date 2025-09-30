@@ -6,7 +6,7 @@ import os
 pygame.init()  # start pygame
 clock = pygame.time.Clock() # for smooth animation
 
-WIDTH, HEIGHT = 800, 600  # seight height and width of the screen
+WIDTH, HEIGHT = 850, 650  # Set height and width of the screen
 screen = pygame.display.set_mode((WIDTH, HEIGHT))  # create the screen
 pygame.display.set_caption("Minesweeper")  # title the program
 
@@ -16,6 +16,7 @@ BLACK = (0, 0, 0)  # define black on the RGB scale
 BLUE = (0, 0, 255)  # define blue on the RGB scale
 GREEN = (0, 200, 0)  # define green on the RGB scale
 RED = (200, 0, 0)  # define red on the RGB scale
+LIGHT_RED = (220, 60, 60)  # a more readable light red
 DARK_RED = (150, 20, 20) # define darker red for mine background
 PURPLE = (200, 0, 200) # define purple on the RGB scale
 GRAY = (100, 100, 100)  # define grey on the RGB scale

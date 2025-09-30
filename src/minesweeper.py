@@ -18,7 +18,7 @@ from pfp_helper import save_profile_image  # copy chosen image to assets
 
 from settings import (
     clock, screen, WIDTH, HEIGHT,
-    WHITE, BLACK, GREEN, RED, DARK_RED, PURPLE, GRAY, LIGHT_GRAY, CONFETTI_COLORS, BLUE,
+    WHITE, BLACK, GREEN, RED, LIGHT_RED, DARK_RED, PURPLE, GRAY, LIGHT_GRAY, CONFETTI_COLORS, BLUE,
     font, small_font,
     MENU, PLAYING, WIN, LOSE,
     GRID_SIZE, TILE_SIZE, GRID_START_X, GRID_START_Y,
@@ -323,6 +323,36 @@ def update_confetti(dt):
 def draw_confetti(surface):
     for p in confetti:
         surface.fill(p["color"], (int(p["x"]), int(p["y"]), int(p["size"]), int(p["size"])))
+
+# Using the screen object, print the end of game message
+def draw_game_end_message(surface, win: bool):
+    # Set the message and text color
+    message, text_color = ("You win!", GREEN) if win else ("You lose!", LIGHT_RED)
+    return_message = "Click anywhere to return to Menu"
+
+    # Use smaller fonts for both messages
+    message_surface = font.render(message, True, text_color)
+    return_surface = small_font.render(return_message, True, WHITE)
+
+    # Calculate box size and position (bottom center, above the bottom margin)
+    box_width = 450
+    box_height = 120
+    box_x = WIDTH // 2 - box_width // 2
+    box_y = HEIGHT - box_height - 15  # 15px above the bottom
+
+    # Draw a dark gray rectangle as the background box
+    pygame.draw.rect(surface, (45, 45, 45), (box_x, box_y, box_width, box_height), border_radius=12)
+    pygame.draw.rect(surface, WHITE, (box_x, box_y, box_width, box_height), 2, border_radius=12) # Add border color
+
+    # Draw the message and return text centered in the box 
+    surface.blit(
+        message_surface,
+        (WIDTH // 2 - message_surface.get_width() // 2, box_y + 20)
+    )
+    surface.blit(
+        return_surface,
+        (WIDTH // 2 - return_surface.get_width() // 2, box_y + box_height - 40)
+    )
 
 # Main Game Loop
 setup_grid() # Setup the grid
@@ -744,13 +774,9 @@ while running:
         draw_grid() # show board with no mines uncovered
         update_confetti(dt)
         draw_confetti(screen)
-        # tell the user they won
-        win_surf = font.render("You Win!", True, GREEN)
-        screen.blit(win_surf, (WIDTH // 2 - win_surf.get_width() // 2, HEIGHT // 2))
 
-        # give options to return to menu
-        info_surf = small_font.render("Click anywhere to return to Menu", True, WHITE)
-        screen.blit(info_surf, (WIDTH // 2 - info_surf.get_width() // 2, HEIGHT // 2 + 50))
+        # tell the user they won
+        draw_game_end_message(screen, True)
 
         # playing status
         playinginfo = small_font.render("Current Status: WIN", True, WHITE)
@@ -759,13 +785,9 @@ while running:
     # if the user loses
     elif state == LOSE:
         draw_grid() # Show the board with all mines revealed
-        # tell the user they lost
-        lose_surf = font.render("You Lose!", True, RED)
-        screen.blit(lose_surf, (WIDTH // 2 - lose_surf.get_width() // 2, HEIGHT // 2))
 
-        # give options to return to menu
-        info_surf = small_font.render("Click anywhere to return to Menu", True, WHITE)
-        screen.blit(info_surf, (WIDTH // 2 - info_surf.get_width() // 2, HEIGHT // 2 + 50))
+        # tell the user they lost
+        draw_game_end_message(screen, False)
 
         # playing status
         playinginfo = small_font.render("Current Status: LOSE", True, WHITE)
