@@ -15,6 +15,7 @@ from button import Button
 from game_assets import flag_sprite, mines_sprite, numbers_sprites, load_circular_profile
 from auth import AuthContext  # simple local auth (token/user.json)
 from pfp_helper import save_profile_image  # copy chosen image to assets
+from game_timer import GameTimer # Track game time
 
 from settings import (
     clock, screen, WIDTH, HEIGHT,
@@ -35,11 +36,14 @@ mode = AI_INTERACTIVE # default to interactive mode
 # global confetti list
 confetti = []
 
+# Initialize the game timer 
+game_time = GameTimer()
+
 # Load the auth context to manage token/username/pfp
 auth = AuthContext()
 
 PROFILE_DIAMETER = 56  # profile picture diameter
-PROFILE_MARGIN = 10    # margin from edge
+PROFILE_MARGIN = 20    # margin from edge
 
 def resolve_profile_path():  # Pick user pfp if logged in, else guest
     # Check if the user is logged in
@@ -66,7 +70,7 @@ setpfp_error = ""  # Error message when set pfp path is invalid
 start_button = Button(WIDTH // 2 - 100, 170, 200, 60, "Start Game", GREEN, (0, 255, 0))  # Start
 settings_button = Button(WIDTH // 2 - 100, 240, 200, 60, "Settings", PURPLE, (255, 0, 255)) # Settings
 easy_button = Button(WIDTH // 2 - 100, 240, 200, 60, "Easy", GREEN, (0, 255, 0)) # Difficulty menu: easy
-medium_button = Button(WIDTH // 2 - 100, 310, 200, 60, "Medium", (200, 200, 0), (255, 255, 0)) # Difficulty menu: medium
+medium_button = Button(WIDTH // 2 - 100, 310, 200, 60, "Medium", (160, 160, 0), (210, 210, 40)) # Difficulty menu: medium
 hard_button = Button(WIDTH // 2 - 100, 380, 200, 60, "Hard", RED, (255, 0, 0)) # Difficulty menu: hard
 mode_interactive_button = Button(WIDTH // 2 - 100, 420, 200, 60, "Interactive", (0, 200, 200), (0, 255, 255)) # Mode menu: interactive
 mode_automatic_button = Button(WIDTH // 2 - 100, 490, 200, 60, "Automatic", (0, 0, 200), (0, 0, 255)) # Mode menu: automatic
@@ -330,7 +334,7 @@ def draw_game_end_message(surface, win: bool):
     message, text_color = ("You win!", GREEN) if win else ("You lose!", LIGHT_RED)
     return_message = "Click anywhere to return to Menu"
 
-    # Use smaller fonts for both messages
+    # Render the message surfaces using font and text color
     message_surface = font.render(message, True, text_color)
     return_surface = small_font.render(return_message, True, WHITE)
 
@@ -473,16 +477,22 @@ while running:
                                 ensure_first_click_safe(row, col, grid)
                                 counts = compute_counts(grid)
                                 first_click_done = True
+                                # Start the game timer
+                                game_time.start()
                             if grid[row][col] == MINE:  # Check for loss
                                 revealed[row][col] = True
                                 reveal_all_mines(grid, revealed)  # reveal all mines on loss
                                 state = LOSE
+                                # Stop the game timer
+                                game_time.stop()
                             else:  # Check win condition
                                 flood_reveal(row, col, grid, counts, revealed, flagged)
                                 revealed[row][col] = True
                                 if check_win(grid, revealed):
                                     state = WIN
                                     start_confetti() # add confetti animation
+                                    # Stop the game timer
+                                    game_time.stop()
                     elif event.button == 3:  # a right click
                         # check that the flagged tile isn't revealed
                         if not revealed[row][col]:
@@ -569,6 +579,9 @@ while running:
                 # Reset first click check
                 first_click_done = False
 
+                # Reset the game timer
+                game_time.reset()
+
                 # Code here to reset values when going back to the menu
 
     # Drawing (depends on state)
@@ -642,8 +655,8 @@ while running:
         screen.blit(counter_surf, (counter_x, counter_y))
 
         # playing status
-        playinginfo = small_font.render("Current Status: MENU", True, WHITE)
-        screen.blit(playinginfo, (10, 10))
+        playing_info = small_font.render("Current Status: MENU", True, WHITE)
+        screen.blit(playing_info, (10, 10))
 
         # difficulty display
         difficulty_setting = small_font.render(f"AI Difficulty: {difficulty.upper()}", True, WHITE)
@@ -712,7 +725,6 @@ while running:
             settings_continue_button.rect.center = (WIDTH // 2, 480)
             settings_continue_button.draw(screen, small_font)
 
-
     # What should be displayed during each state
     elif state == PLAYING:
         draw_grid()
@@ -722,8 +734,16 @@ while running:
         screen.blit(info_surf, (10, HEIGHT - 30))
 
         # playing status
-        playinginfo = small_font.render("Current Status: Playing", True, WHITE)
-        screen.blit(playinginfo, (10, 10))
+        playing_info = small_font.render("Current Status: Playing", True, WHITE)
+        screen.blit(playing_info, (10, 10))
+        
+        # game timer display
+        if game_time.running:
+            # Get the elapsed time and set up the surface
+            timer_info = small_font.render(f"Time: {game_time.get_elapsed_time()}", True, WHITE)
+            # Draw the game time info
+            screen.blit(timer_info, (10, 40))
+
         # Draw the profile picture in the top-right corner during the PLAYING state
         if profile_surface:  # Check if the profile image surface was loaded successfully
             px = WIDTH - PROFILE_MARGIN - PROFILE_DIAMETER  # Calculate the x-coordinate for the profile picture (right-aligned with margin)
@@ -781,6 +801,10 @@ while running:
         # playing status
         playinginfo = small_font.render("Current Status: WIN", True, WHITE)
         screen.blit(playinginfo, (10, 10))
+        
+        # Display final time
+        timer_text = small_font.render(f"Time: {game_time.get_elapsed_time()}", True, WHITE)
+        screen.blit(timer_text, (10, 40))
 
     # if the user loses
     elif state == LOSE:
@@ -792,11 +816,13 @@ while running:
         # playing status
         playinginfo = small_font.render("Current Status: LOSE", True, WHITE)
         screen.blit(playinginfo, (10, 10))
+        
+        # Display final time
+        timer_text = small_font.render(f"Time: {game_time.get_elapsed_time()}", True, WHITE)
+        screen.blit(timer_text, (10, 40))
 
     # Update screen
     pygame.display.flip()
 
 # Exit
 pygame.quit()
-
-
