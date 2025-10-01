@@ -473,7 +473,7 @@ while running:
 
                 # If an AI mode is selected, make a solver instance
                 if mode == AI_AUTOMATIC or mode == AI_INTERACTIVE:
-                    ai = ai_solver(difficulty, grid, revealed, flagged)
+                    ai = ai_solver(difficulty, grid, counts, revealed, flagged)
                     if mode == AI_AUTOMATIC:
                         player_turn = False
 
