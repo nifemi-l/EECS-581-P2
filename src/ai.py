@@ -153,12 +153,20 @@ class ai_solver():
     
 
     def rand_reveal(self):
-        for num in range(100):
-            rand_i = random.randint(0, 9)
-            rand_j = random.randint(0, 9)
-            if not self.revealed[rand_i][rand_j]:
-                # If flagged, ignore (main loop handles flags)
-                return rand_i, rand_j, "reveal"
+    # Randomly generate a location on the grid
+        for i in range(10):
+            for j in range(10):
+                rand_i = random.randint(0, 9)
+                rand_j = random.randint(0, 9)
+                # Make move with random grid location. If it is already revealed, no move is made and a new random square is checked.
+                if self.revealed[rand_i][rand_j] == False:
+                    # If the random square is not revealed, remove flag if it has one, and reveal it.
+                    if self.flagged[rand_i][rand_j] == True:
+                        return rand_i, rand_j, "reveal"
+                    # Reveals the square and then returns to end its move.
+                    return rand_i, rand_j, "reveal"
+
+        # If no valid move is found
         return None, None, None
 
     """
