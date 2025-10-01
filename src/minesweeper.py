@@ -491,9 +491,11 @@ while running:
                         elif get_remaining_flags() > 0:
                             sfx.play_flag_placed()
                             flagged[row][col] = True  # flag only if flags remain
-            if mode == AI_INTERACTIVE:
+            if mode == AI_INTERACTIVE and action != "flag":
+                # In AUTOMATIC, keep player_turn = False so the AI moves again next frame.
+                # Also, since flags don't count as moves, don't progress to the next turn if the action
+                # taken was to place a flag.
                 player_turn = True
-            # In AUTOMATIC, keep player_turn = False so the AI moves again next frame
 
     # Handle events/inputs
     for event in pygame.event.get():
