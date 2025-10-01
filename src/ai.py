@@ -12,34 +12,32 @@ class ai_solver():
         # Call the respective ai_move function depending on the difficulty the player selected.
 
         if self.difficulty == EASY:
-            self.easy_ai_move()
+            return self.easy_ai_move()
         elif self.difficulty == MEDIUM:
-            self.medium_ai_move()
+            return self.medium_ai_move()
         elif self.difficulty == HARD:
-            self.hard_ai_move()
+            return self.hard_ai_move()
         # If the difficulty for some reason is not easy, medium, or hard, just pass.
             # This should never occur.
         else:
-            pass
+            return None, None, None
 
     def easy_ai_move(self):
         """
-        Easy AI purely makes random moves
-        Generate a random location on the grid using random values and reveal it.
+        Easy AI purely makes random moves.
+        Generate a random location on the grid using random values and return it as a reveal action.
         """        
-        # Randomly generate a location on the grid
-        for i in range(10):
-            for j in range(10):
-                rand_i = random.randint(0,9)
-                rand_j = random.randint(0,9)
-                # Make move with random grid location. If it is already revealed, no move is made and a new random square is checked.
-                if self.revealed[rand_i][rand_j] == False:
-                    # If the random square is not revealed, remove flag if it has one, and reveal it.
-                    if self.flagged[rand_i][rand_j] == True:
-                        self.flagged[rand_i][rand_j] = False
-                    # Reveals the square and then returns to end its move.
-                    self.revealed[rand_i][rand_j] = True
-                    return
+        # Try up to 100 times to find an unrevealed square
+        for _ in range(100):
+            rand_i = random.randint(0, 9)
+            rand_j = random.randint(0, 9)
+            # Pick the first unrevealed square
+            if not self.revealed[rand_i][rand_j]:
+                # If flagged, ignore (main loop handles flags)
+                return rand_i, rand_j, "reveal"
+
+        # If no move possible (all revealed), return None
+        return None, None, None
 
         
     def medium_ai_move(self):
@@ -74,5 +72,4 @@ class ai_solver():
                     if self.flagged[i][j] == True:
                         self.flagged[i][j] = False
                     # Reveal the cell and returns to finish the function so only 1 move is made.
-                    self.revealed[i][j] = True
-                    return
+                    return i, j, "reveal"

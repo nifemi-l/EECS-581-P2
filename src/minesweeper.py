@@ -18,6 +18,7 @@ from auth import AuthContext  # simple local auth (token/user.json)
 from pfp_helper import save_profile_image  # copy chosen image to assets
 from game_timer import GameTimer # Track game time
 from sfx import SFX
+from ai import ai_solver
 
 from settings import (
     clock, screen, WIDTH, HEIGHT,
@@ -35,10 +36,16 @@ counter_value = 10  # adjustable number in main menu
 difficulty = MEDIUM # default to medium
 mode = AI_INTERACTIVE # default to interactive mode
 
+# declare ai (defualt none)
+ai = None
+
+# declare turn order
+player_turn = True
+
 # global confetti list
 confetti = []
 
-# Initialize the game timer 
+# initialize the game timer 
 game_time = GameTimer()
 
 # High score notification variables
@@ -460,8 +467,17 @@ while running:
                 counts = compute_counts(grid)
                 first_click_done = False
 
-                # print(grid)
+                # Define AI & turn order
+                ai = None
+                player_turn = True
 
+                # If an AI mode is selected, make a solver instance
+                if mode == AI_AUTOMATIC or mode == AI_INTERACTIVE:
+                    ai = ai_solver(difficulty, grid, revealed, flagged)
+                    if mode == AI_AUTOMATIC:
+                        player_turn = False
+
+                # print(grid)
                 print(grid)
 
                 # generate a list of squares that can be chosen
@@ -514,29 +530,12 @@ while running:
 
         # PLAYING state logic
         elif state == PLAYING:
-            # check if the user presses any mouse button
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_x, mouse_y = event.pos  # get coordinates of mouse
-                row, col = get_grid_pos(mouse_x, mouse_y)  # convert coordinates to grid position
-
-                # AI Solver notes:
-                # based on difficulty, call the right AI function to "get a move". 
-                # We handle this one move at a time. 
-                # Proces:
-                #   - It is the AI's turn
-                #   - Ask AI solver for move (select based on difficulty)
-                #   - AI solver returns a row, col, and action to take
-                #   - We apply that action to the right row and col
-                #   - Move to next turn depending on mode (either player or AI again)
-                # More details:
-                # If it's the AI turn call:
-                #   ai_get_easy(grid) -> returns row, col, action
-                # else: behave as normal with player input
-                # we then apply the AI move here.
-
-                if row is not None and col is not None:  # check if click is in grid
-                    if event.button == 1:  # a left click
-                        if not flagged[row][col]:  # can't reveal a flagged tile
+            # --- AI MOVE (automatic or interactive) ---
+            if ai and not player_turn:
+                row, col, action = ai.make_move()
+                if row is not None and col is not None:
+                    if action == "reveal":
+                        if not flagged[row][col] and not revealed[row][col]:
                             if not first_click_done:  # Ensure a mine isn't initially clicked
                                 ensure_first_click_safe(row, col, grid)
                                 sfx.play_square_revealed()
@@ -561,7 +560,6 @@ while running:
                                     start_confetti() # add confetti animation
                                     # Stop the game timer
                                     game_time.stop()
-                                    
                                     # Calculate and update high score (only for logged-in users since they have a high score and guest doesn't)
                                     if auth.is_logged_in():
                                         # Get the elapsed time in seconds
@@ -578,6 +576,71 @@ while running:
                                                 show_high_score_notification = True # Global toggle
                                                 # Set the notification start time to the current time
                                                 notification_start_time = pygame.time.get_ticks()
+                    elif action == "flag":
+                        if not revealed[row][col]:
+                            if flagged[row][col]:
+                                sfx.play_flag_popped()
+                                flagged[row][col] = False
+                            elif get_remaining_flags() > 0:
+                                sfx.play_flag_placed()
+                                flagged[row][col] = True  # flag only if flags remain
+                if mode == AI_INTERACTIVE:
+                    player_turn = True
+                # In AUTOMATIC, keep player_turn = False so the AI moves again next frame
+
+            # --- PLAYER INPUT ---
+            if event.type == pygame.MOUSEBUTTONDOWN and mode != AI_AUTOMATIC:
+                mouse_x, mouse_y = event.pos  # get coordinates of mouse
+                row, col = get_grid_pos(mouse_x, mouse_y)  # convert coordinates to grid position
+
+                if row is not None and col is not None:  # check if click is in grid
+                    if event.button == 1:  # a left click
+                        if not flagged[row][col]:  # can't reveal a flagged tile
+                            if revealed[row][col]:
+                                # already revealed, ignore this click entirely
+                                continue
+                            if not first_click_done:  # Ensure a mine isn't initially clicked
+                                ensure_first_click_safe(row, col, grid)
+                                sfx.play_square_revealed()
+                                counts = compute_counts(grid)
+                                first_click_done = True
+                                # Start the game timer
+                                game_time.start()
+                            if grid[row][col] == MINE:  # Check for loss
+                                sfx.play_loss()
+                                revealed[row][col] = True
+                                reveal_all_mines(grid, revealed)  # reveal all mines on loss
+                                state = LOSE
+                                # Stop the game timer
+                                game_time.stop()
+                            else:  # Check win condition
+                                sfx.play_square_revealed()
+                                flood_reveal(row, col, grid, counts, revealed, flagged)
+                                revealed[row][col] = True
+                                if check_win(grid, revealed):
+                                    state = WIN
+                                    sfx.play_win()
+                                    start_confetti() # add confetti animation
+                                    # Stop the game timer
+                                    game_time.stop()
+                                    # Calculate and update high score (only for logged-in users since they have a high score and guest doesn't)
+                                    if auth.is_logged_in():
+                                        # Get the elapsed time in seconds
+                                        elapsed_seconds = game_time.get_elapsed_time_seconds()
+                                        # Avoid division by zero
+                                        if elapsed_seconds > 0:
+                                            # Calculate the score
+                                            score = (counter_value * 1000) // elapsed_seconds  # Higher score = better
+                                            # Check if the score is a new high score
+                                            is_new_high = auth.set_high_score(score)
+                                            # Show notification if it's a new high score
+                                            if is_new_high:
+                                                # Show notification if it's a new high score (for 3s)
+                                                show_high_score_notification = True # Global toggle
+                                                # Set the notification start time to the current time
+                                                notification_start_time = pygame.time.get_ticks()
+                        if mode == AI_INTERACTIVE:
+                            player_turn = False
                     elif event.button == 3:  # a right click
                         # check that the flagged tile isn't revealed
                         if not revealed[row][col]:
@@ -588,6 +651,7 @@ while running:
                             elif get_remaining_flags() > 0:
                                 sfx.play_flag_placed()
                                 flagged[row][col] = True  # flag only if flags remain
+
 
         # SIGNUP state
         elif state == "signup":
