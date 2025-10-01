@@ -32,12 +32,9 @@ class ai_solver():
             for j in range(10):
                 rand_i = random.randint(0,9)
                 rand_j = random.randint(0,9)
-                # Make move with random grid location. If it is already revealed, no move is made and a new random square is checked.
-                if self.revealed[rand_i][rand_j] == False:
-                    # If the random square is not revealed, remove flag if it has one, and reveal it.
-                    if self.flagged[rand_i][rand_j] == True:
-                        self.flagged[rand_i][rand_j] = False
-                    # Reveals the square and then returns to end its move.
+                # Check if random square is not revealed and is not flagged. If so, its a valid move
+                if self.revealed[rand_i][rand_j] == False and self.flagged[rand_i][rand_j] == False:
+                    # Make the move and return, ensuring only a single move is made.
                     self.revealed[rand_i][rand_j] = True
                     return
 
