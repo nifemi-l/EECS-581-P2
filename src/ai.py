@@ -1,4 +1,4 @@
-from random import random
+import random
 from settings import EASY, MEDIUM, HARD
 class ai_solver():
 
@@ -13,54 +13,39 @@ class ai_solver():
 
         if self.difficulty == EASY:
             self.easy_ai_move()
-
-        """
-        # Medium and hard are not complete.
-
         elif self.difficulty == MEDIUM:
             self.medium_ai_move()
-
         elif self.difficulty == HARD:
             self.hard_ai_move()
-        """
         # If the difficulty for some reason is not easy, medium, or hard, just pass.
             # This should never occur.
-        
-        """
         else:
             pass
-        """
-        
+
     def easy_ai_move(self):
-        
         """
         Easy AI purely makes random moves
-
         Generate a random location on the grid using random values and reveal it.
-        """
+        """        
+        # Randomly generate a location on the grid
+        for i in range(10):
+            for j in range(10):
+                rand_i = random.randint(0,9)
+                rand_j = random.randint(0,9)
+                # Make move with random grid location. If it is already revealed, no move is made and a new random square is checked.
+                if self.revealed[rand_i][rand_j] == False:
+                    # If the random square is not revealed, remove flag if it has one, and reveal it.
+                    if self.flagged[rand_i][rand_j] == True:
+                        self.flagged[rand_i][rand_j] = False
+                    # Reveals the square and then returns to end its move.
+                    self.revealed[rand_i][rand_j] = True
+                    return
 
-        # Use a bool to keep track if a valid move has been made.
-            # For example, if it randomly selects a square that has been revealed, it should randomly choose a new square and try again.
-        made_move = False
-
-        # Until the ai reveals a square, keep randomly selecting squares til it reveals one and makes a move.
-        while made_move == False:
-            # Randomly generate 
-            for i in range(10):
-                for j in range(10):
-                    rand_i = random.randint(1,10)
-                    rand_j = random.randint(1,10)
-
-                    # Make move with random grid location.
-                        # If random square is not revealed, remove flag if it has one, and reveal it.
-                    if self.revealed[rand_i][rand_j] == False:
-                        if self.flagged[rand_i][rand_j] == True:
-                            self.flagged[rand_i][rand_j] = False
-                        self.revealed[rand_i][rand_j] = True
-                        made_move = True
         
+    def medium_ai_move(self):
+        pass
 
-        """
+    """
         Medium move pseudocode / logic:
 
         1: Check for guaranteed safe moves using already revealed squares
@@ -77,19 +62,17 @@ class ai_solver():
 
                 1-2-1 rule
                 X O X
-        
-        
+        """  
 
     def hard_ai_move(self):
-        
-        If difficulty_setting = hard
-            The AI will be able to "cheat" and will make moves to eventually reveal the entire board.
-            Is essentially all knowing
-
-            
+        # Hard AI cheats by iterating through all the squares on the board, revealing the first found square that is not revealed and does not have a mine.
         for i in range(10):
             for j in range(10):
-                if grid[i][j] == 0 and revealed[i][j] == False: # and flagged == False? Should still reveal everything if a flagged square happens to be safe right?
-                    revealed[i][j] = True
-        
-    """
+                # If the next cell that is not revealed does not have a mine on it, reveal it.
+                if self.grid[i][j] == 0 and self.revealed[i][j] == False:
+                    # If this cell happens to be flagged (even though it has no mine), remove the flag.
+                    if self.flagged[i][j] == True:
+                        self.flagged[i][j] = False
+                    # Reveal the cell and returns to finish the function so only 1 move is made.
+                    self.revealed[i][j] = True
+                    return
