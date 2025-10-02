@@ -6,14 +6,13 @@ from settings import ASSETS_DIR, NUM_DIR, SOUND_DIR
 
 class SFX:
     def __init__(self, mixer):
-        self.sfx_channel = mixer.Channel(0)
-        self.sfx_channel.set_volume(0.3)
-        self.music_channel = mixer.Channel(1)
-        mixer.set_reserved(1)
-        self.music_channel.set_volume(0.1)
-        self.enabled = True
+        try: 
+            self.sfx_channel = mixer.Channel(0)
+            self.sfx_channel.set_volume(0.3)
+            self.music_channel = mixer.Channel(1)
+            mixer.set_reserved(1)
+            self.music_channel.set_volume(0.1)
 
-        try:
             background_music_choice = random.choice(os.listdir(os.path.join(SOUND_DIR, "bgmusic")))
             print(f"{os.path.join(SOUND_DIR, 'bgmusic', background_music_choice)}")
             self.background_music = mixer.Sound(os.path.join(SOUND_DIR, "bgmusic", background_music_choice))
@@ -24,12 +23,19 @@ class SFX:
             self.win_sound = mixer.Sound(os.path.join(SOUND_DIR,"win.mp3"))
             self.square_revealed_sound = mixer.Sound(os.path.join(SOUND_DIR,"square-revealed.mp3"))
             self.flagg_popped_sound = mixer.Sound(os.path.join(SOUND_DIR, "flag-popped.mp3"))
+
+            self.enabled = True            
         except:
             self.enabled = False
 
+    def stop_sfx(self):
+        if self.enabled:
+            self.sfx_channel.stop()
+
     def ensure_bgmusic(self):
-        if not self.music_channel.get_busy() and self.enabled:
-            self.start_bgmusic()
+        # Use short circuit evaluation to ensure that we are enabled before we call any SFX methods
+        if self.enabled and not self.music_channel.get_busy():
+                self.start_bgmusic()
 
     def play_flag_placed(self):
         if self.enabled:
