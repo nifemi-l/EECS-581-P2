@@ -40,10 +40,11 @@ class ai_solver():
         Medium move pseudocode / logic:
 
         Follow 3 or 4 rules in order:
-            1: If a revealed cell has same number of hidden neighbors as its number, flag all hidden neighbors.
-                Ex: A 3 is shown and only had 3 unrevealed adjacent squares. Means they all should be mines, flag them.
-            2: If # of flagged neighbors of a revealed cell equals that cell's number, AI should reveal all the other squares.
+            1: If # of flagged neighbors of a revealed cell equals that cell's number, AI should reveal all the other squares.
                 Ex: A cell shows 2. It has 2 neighbors flagged and 4 unrevealed neighbors, reveal all them since 2 showing = 2 flagged
+            2: If a revealed cell has same number of hidden neighbors as its number, flag all hidden neighbors.
+                Ex: A 3 is shown and only had 3 unrevealed adjacent squares. Means they all should be mines, flag them.
+            
             3: Use the 1-2-1 pattern rule. If 3 consecutive adjacent cells show 1-2-1, the two outer neighbors are mines, the inner is safe.
                 So Flag the outer squares, reveal the inner squares
                 Ex: Board shows
@@ -61,25 +62,29 @@ class ai_solver():
         # Step 0: If board has every square unrevealed / no moves have been made
         is_new_board = self.is_first_move()
         if is_new_board:
-            print("step 0")
-            return self.rand_reveal()
+            print("Making first move. Revealing center square")
+            self.revealed[4][4] = True
 
 
         # NOTE: Swapping step 1 and step 2 tends to perform better, more testing is needed.
 
-        # Step 2: Check if adj_eq_flags returns anything, if so return that square and action.
-        to_flag = self.adj_eq_flags()
-        if (to_flag != (None, None, None)):
-            return to_flag
 
-        # Step 1: Check if hidden_hidden_neighbor_eq_num returns anything, if so return that square and action.
-        
-        to_reveal = self.hidden_neighbor_eq_num()
+
+        # Step 1: Check if adj_eq_flags returns anything, if so return that square and action.
+        to_reveal = self.adj_eq_flags()
         if (to_reveal != (None, None, None)):
+            print(f"To reveal: {to_reveal}")
             return to_reveal
 
-        
 
+        # Step 2: Check if hidden_hidden_neighbor_eq_num returns anything, if so return that square and action.
+        
+        to_flag = self.hidden_neighbor_eq_num()
+        if (to_flag != (None, None, None)):
+            print(f"To flag: {to_flag}")
+            return to_flag
+
+        
         
         
         """
@@ -89,9 +94,10 @@ class ai_solver():
             return found_1_2_1
         """
         # Step 4: Randomly choose a revealed square to reveal an adjacent unrevealed square to. Prioritizes squares with lowest numbers of adjacent mines.
-        print("made to rand reveal")
+        
         random_reveal = self.rand_reveal()
         if (random_reveal != (None, None, None)):
+            print(f"Randomly revealing: {random_reveal}")
             return random_reveal
         
         # Step 5: Should never occur, but if it does, return None.
@@ -132,9 +138,14 @@ class ai_solver():
                     if (hidden_adj_count > 0) and (hidden_adj_count + flagged_adj_count) == count:
                         action_i, action_j = self.find_next_adj_hidden(i, j)
                         if action_i is not None:
+                            print(f"Cell ({i},{j}) [count={count}, hidden={hidden_adj_count}, flagged={flagged_adj_count}] triggers flag at ({i},{j})")
                             return action_i, action_j, "flag"
         return None, None, None
                 
+
+    
+                
+
 
     def adj_eq_flags(self):
         for i in range(10):
@@ -147,13 +158,13 @@ class ai_solver():
                     if hidden_adj_count > 0 and flagged_adj_count == count:
                         action_i, action_j = self.find_next_adj_hidden(i, j)
                         if action_i is not None:
+                            print(f"Cell ({i},{j}) [count={count}, hidden={hidden_adj_count}, flagged={flagged_adj_count}] triggers reveal at ({i},{j})")
                             return action_i, action_j, "reveal"
         return None, None, None
-    
-    
 
+    
     def rand_reveal(self):
-    # Randomly generate a location on the grid
+        # Randomly generate a location on the grid
         for i in range(10):
             for j in range(10):
                 rand_i = random.randint(0, 9)
@@ -167,7 +178,9 @@ class ai_solver():
                     return rand_i, rand_j, "reveal"
 
         # If no valid move is found
-        return None, None, None
+        return None, None, None 
+
+    
 
     """
     Some helper functions for the helper functions
