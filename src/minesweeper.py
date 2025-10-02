@@ -27,7 +27,8 @@ from settings import (
     GRID_SIZE, TILE_SIZE, GRID_START_X, GRID_START_Y,
     MINE, DIRS8, CONFETTI_TARGET, ASSETS_DIR,
     EASY, MEDIUM, HARD,
-    AI_INTERACTIVE, AI_AUTOMATIC, AI_MANUAL
+    AI_INTERACTIVE, AI_AUTOMATIC, AI_MANUAL,
+    current_theme, switch_theme, get_current_theme
 )
 
 state = MENU  # start in the main menu
@@ -97,6 +98,30 @@ plus_button = Button(WIDTH // 2 + 60, 550, 60, 60, "+", GRAY, (150, 150, 150))  
 minus_button = Button(WIDTH // 2 - 120, 550, 60, 60, "-", GRAY, (150, 150, 150))  # Dec bombs
 mute_button = Button(WIDTH - 120, HEIGHT - 260 , 100, 40 , "Mute", GRAY, (150, 150, 150)) # Mode menu: manual
 skip_button = Button(WIDTH - 500, HEIGHT - 260 , 100, 40 , "Skip", GRAY, (150, 150, 150)) # Mode menu: manual
+
+# Theme toggle buttons
+dark_mode_button = Button(WIDTH // 2 - 110, 420, 100, 50, "Dark", GRAY, (150, 150, 150))  # Dark mode button
+light_mode_button = Button(WIDTH // 2 + 10, 420, 100, 50, "Light", GRAY, (150, 150, 150))  # Light mode button
+
+def load_user_theme():
+    """Load the user's theme preference and switch to it"""
+    theme_pref = auth.get_theme_preference()
+    switch_theme(theme_pref)
+    update_theme_button_styles()
+
+def update_theme_button_styles():
+    """Update theme button colors based on current theme"""
+    theme = get_current_theme()
+    if theme['background'] == (0, 0, 0):  # Dark theme active
+        dark_mode_button.color = GREEN
+        dark_mode_button.hover_color = (0, 255, 0)
+        light_mode_button.color = GRAY
+        light_mode_button.hover_color = (150, 150, 150)
+    else:  # Light theme active
+        dark_mode_button.color = GRAY
+        dark_mode_button.hover_color = (150, 150, 150)
+        light_mode_button.color = GREEN
+        light_mode_button.hover_color = (0, 255, 0)
 
 
 # define the grid that the thing will be mapped to
@@ -195,7 +220,7 @@ def draw_grid():
         x = GRID_START_X + col * TILE_SIZE  # get start pos
         y = GRID_START_Y - 25
         letter = chr(ord('A') + col)  # iterate through different numbers
-        col_letters = small_font.render(letter, True, WHITE)  # create the character
+        col_letters = small_font.render(letter, True, get_current_theme()['text'])  # create the character
         screen.blit(col_letters, (x + TILE_SIZE // 2 - col_letters.get_width() // 2,
                                   y))  # draw onto another object (in this case the tile)
 
@@ -204,7 +229,7 @@ def draw_grid():
         x = GRID_START_X - 30  # get start pos
         y = GRID_START_Y + row * TILE_SIZE
         number = str(row + 1)  # iterate through numbers
-        row_numbers = small_font.render(number, True, WHITE)  # create the character
+        row_numbers = small_font.render(number, True, get_current_theme()['text'])  # create the character
         screen.blit(row_numbers, (x,
                                   y + TILE_SIZE // 2 - row_numbers.get_height() // 2))  # draw onto another object (in this case the tile)
 
@@ -220,15 +245,15 @@ def draw_grid():
                     pygame.draw.rect(screen, DARK_RED, (x, y, TILE_SIZE, TILE_SIZE))
                     screen.blit(mines_sprite, (x + 10, y + 10))
                 else:  # otherwise the revealed tile turns light gray
-                    pygame.draw.rect(screen, LIGHT_GRAY, (x, y, TILE_SIZE, TILE_SIZE))
+                    pygame.draw.rect(screen, get_current_theme()['grid_revealed'], (x, y, TILE_SIZE, TILE_SIZE))
                     n = counts[row][col]  # Show numbers on revealed tiles
                     if n > 0:  # Generate a number on tiles that have nearby mines
                         screen.blit(numbers_sprites[n], (x + 10, y + 10))
             else:  # when not revealed tile is gray
-                pygame.draw.rect(screen, GRAY, (x, y, TILE_SIZE, TILE_SIZE))
+                pygame.draw.rect(screen, get_current_theme()['grid_tile'], (x, y, TILE_SIZE, TILE_SIZE))
 
             # draw tile border
-            pygame.draw.rect(screen, BLACK, (x, y, TILE_SIZE, TILE_SIZE), 2)
+            pygame.draw.rect(screen, get_current_theme()['grid_border'], (x, y, TILE_SIZE, TILE_SIZE), 2)
 
             if flagged[row][col] and not revealed[row][col]:
                 # Load flag sprite when tile is flagged
@@ -394,7 +419,7 @@ def draw_game_end_message(surface, win: bool):
 
     # Render the message surfaces using font and text color
     message_surface = font.render(message, True, text_color)
-    return_surface = small_font.render(return_message, True, WHITE)
+    return_surface = small_font.render(return_message, True, get_current_theme()['text'])
 
     # Calculate box size and position (bottom center, above the bottom margin)
     box_width = 450
@@ -402,9 +427,9 @@ def draw_game_end_message(surface, win: bool):
     box_x = WIDTH // 2 - box_width // 2
     box_y = HEIGHT - box_height - 15  # 15px above the bottom
 
-    # Draw a dark gray rectangle as the background box
-    pygame.draw.rect(surface, (45, 45, 45), (box_x, box_y, box_width, box_height), border_radius=12)
-    pygame.draw.rect(surface, WHITE, (box_x, box_y, box_width, box_height), 2, border_radius=12) # Add border color
+    # Draw a themed rectangle as the background box
+    pygame.draw.rect(surface, get_current_theme()['notification_bg'], (box_x, box_y, box_width, box_height), border_radius=12)
+    pygame.draw.rect(surface, get_current_theme()['notification_border'], (box_x, box_y, box_width, box_height), 2, border_radius=12) # Add border color
 
     # Draw the message and return text centered in the box 
     surface.blit(
@@ -429,7 +454,7 @@ def draw_profile_and_info(surface):
         if auth.is_logged_in():
             uname = auth.get_username() or "" # Get the username of the logged in user
             if uname:
-                name_surf = small_font.render(uname, True, WHITE) # Render the username as a surface
+                name_surf = small_font.render(uname, True, get_current_theme()['text']) # Render the username as a surface
                 name_x = px + PROFILE_DIAMETER // 2 - name_surf.get_width() // 2
                 name_y = py + PROFILE_DIAMETER + 6 # Set the y position of the username
                 surface.blit(name_surf, (name_x, name_y))
@@ -446,7 +471,7 @@ def draw_profile_and_info(surface):
 def draw_high_score_notification(surface):
     # Draw a green notification box for new high score
     message = "New High Score!"
-    message_surface = small_font.render(message, True, WHITE)
+    message_surface = small_font.render(message, True, get_current_theme()['text'])
     
     # Box dimensions
     box_width = 300
@@ -454,9 +479,9 @@ def draw_high_score_notification(surface):
     box_x = WIDTH // 2 - box_width // 2 # Set the x position of the box as the middle of the screen
     box_y = 50  # Set the y position of the box as the top of the screen
     
-    # Draw green background box with white border
+    # Draw green background box with themed border
     pygame.draw.rect(surface, (0, 180, 0), (box_x, box_y, box_width, box_height), border_radius=8)
-    pygame.draw.rect(surface, WHITE, (box_x, box_y, box_width, box_height), 2, border_radius=8)
+    pygame.draw.rect(surface, get_current_theme()['notification_border'], (box_x, box_y, box_width, box_height), 2, border_radius=8)
     
     # Draw message centered in the box
     surface.blit(
@@ -468,13 +493,16 @@ def draw_high_score_notification(surface):
 setup_grid() # Setup the grid
 sfx.start_bgmusic()
 
+# Load user's theme preference
+load_user_theme()
+
 running = True
 
 while running:
     dt = clock.tick(60) / 1000.0 # seconds since last frame
 
-    # Fill background black every frame
-    screen.fill(BLACK)
+    # Fill background with theme color every frame
+    screen.fill(get_current_theme()['background'])
 
     # Handle AI updates outside the user input processing and response loop
     draw_sfx_info(screen)
@@ -645,6 +673,14 @@ while running:
                 mode = AI_AUTOMATIC
             if mode_manual_button.is_clicked(event):
                 mode = AI_MANUAL
+            if dark_mode_button.is_clicked(event):
+                switch_theme("dark")
+                auth.set_theme_preference("dark")
+                update_theme_button_styles()
+            if light_mode_button.is_clicked(event):
+                switch_theme("light")
+                auth.set_theme_preference("light")
+                update_theme_button_styles()
             if settings_continue_button.is_clicked(event):
                 state = MENU
 
@@ -804,7 +840,7 @@ while running:
     # Where the game should be drawn, visuals and images
     if state == MENU:
         # Title
-        title_surf = font.render("Minesweeper", True, WHITE)
+        title_surf = font.render("Minesweeper", True, get_current_theme()['text'])
         title_x = WIDTH // 2 - title_surf.get_width() // 2
         title_y = 60
         screen.blit(title_surf, (title_x, title_y))
@@ -862,7 +898,7 @@ while running:
         plus_button.draw(screen, font)
 
         # Counter centered between +/-
-        counter_surf = font.render(str(counter_value), True, WHITE)
+        counter_surf = font.render(str(counter_value), True, get_current_theme()['text'])
         # Set the x position of the counter
         counter_x = WIDTH // 2 - counter_surf.get_width() // 2
         # Set the y position of the counter
@@ -871,15 +907,15 @@ while running:
         screen.blit(counter_surf, (counter_x, counter_y))
 
         # playing status
-        playing_info = small_font.render("Current Status: MENU", True, WHITE)
+        playing_info = small_font.render("Current Status: MENU", True, get_current_theme()['text'])
         screen.blit(playing_info, (10, 10))
 
         # difficulty display
-        difficulty_setting = small_font.render(f"AI Difficulty: {difficulty.upper()}", True, WHITE)
+        difficulty_setting = small_font.render(f"AI Difficulty: {difficulty.upper()}", True, get_current_theme()['text'])
         screen.blit(difficulty_setting, (10, 200))
 
         # mode display
-        mode_setting = small_font.render(f"AI Mode: {mode.upper()}", True, WHITE)
+        mode_setting = small_font.render(f"AI Mode: {mode.upper()}", True, get_current_theme()['text'])
         screen.blit(mode_setting, (10, 240))
 
         # Profile picture, username, and high score
@@ -887,7 +923,7 @@ while running:
 
     elif state == "settings":
             # difficulty display
-            difficulty_display = small_font.render("SELECT AI DIFFICULTY", True, WHITE)
+            difficulty_display = small_font.render("SELECT AI DIFFICULTY", True, get_current_theme()['text'])
             screen.blit(difficulty_display, (WIDTH // 2 - 300, 60))
 
             # settings
@@ -904,7 +940,7 @@ while running:
             hard_button.draw(screen, small_font)
 
             # mode display
-            mode_display = small_font.render("SELECT AI MODE", True, WHITE)
+            mode_display = small_font.render("SELECT AI MODE", True, get_current_theme()['text'])
             screen.blit(mode_display, (WIDTH // 2 + 60, 60))
 
             # Set the position of the buttons
@@ -918,13 +954,23 @@ while running:
             mode_manual_button.draw(screen, small_font)
 
             # Output display
-            current_difficulty_display = small_font.render(f"Set to: {difficulty.upper()}", True, WHITE)
+            current_difficulty_display = small_font.render(f"Set to: {difficulty.upper()}", True, get_current_theme()['text'])
             screen.blit(current_difficulty_display, (WIDTH // 2 - 260, 380))
-            current_mode_display = small_font.render(f"Set to: {mode.upper()}", True, WHITE)
+            current_mode_display = small_font.render(f"Set to: {mode.upper()}", True, get_current_theme()['text'])
             screen.blit(current_mode_display, (WIDTH // 2 + 60, 380))
 
-            # Add the continue button   
-            settings_continue_button.rect.center = (WIDTH // 2, 480)
+            # Theme selection section - moved down for better spacing
+            theme_display = small_font.render("SELECT THEME", True, get_current_theme()['text'])
+            screen.blit(theme_display, (WIDTH // 2 - theme_display.get_width() // 2, 440))
+            
+            # Position and draw theme buttons with more spacing
+            dark_mode_button.rect.center = (WIDTH // 2 - 50, 490)
+            light_mode_button.rect.center = (WIDTH // 2 + 50, 490)
+            dark_mode_button.draw(screen, small_font)
+            light_mode_button.draw(screen, small_font)
+
+            # Add the continue button with much more spacing from bottom
+            settings_continue_button.rect.center = (WIDTH // 2, 580)
             settings_continue_button.draw(screen, small_font)
 
     # What should be displayed during each state
@@ -932,17 +978,17 @@ while running:
         draw_grid()
 
         # Instructions
-        info_surf = small_font.render("Left click: Reveal | Right click: Flag", True, WHITE)
+        info_surf = small_font.render("Left click: Reveal | Right click: Flag", True, get_current_theme()['text'])
         screen.blit(info_surf, (10, HEIGHT - 30))
 
         # playing status
-        playing_info = small_font.render("Current Status: Playing", True, WHITE)
+        playing_info = small_font.render("Current Status: Playing", True, get_current_theme()['text'])
         screen.blit(playing_info, (10, 10))
         
         # game timer display
         if game_time.running:
             # Get the elapsed time and set up the surface
-            timer_info = small_font.render(f"Time: {game_time.get_elapsed_time()}", True, WHITE)
+            timer_info = small_font.render(f"Time: {game_time.get_elapsed_time()}", True, get_current_theme()['text'])
             # Draw the game time info
             screen.blit(timer_info, (10, 40))
 
@@ -952,13 +998,13 @@ while running:
         else:
             username = "Player"
         turn_string = "Turn: " + (username if player_turn else "AI")
-        turn_display = small_font.render(turn_string, True, WHITE)
+        turn_display = small_font.render(turn_string, True, get_current_theme()['text'])
         screen.blit(turn_display, (10, HEIGHT - 60))
 
         # Profile picture, username, and high score
         draw_profile_and_info(screen)
 
-        remaining_flags_text = small_font.render(f"Flags Remaining: {get_remaining_flags()}", True, WHITE)
+        remaining_flags_text = small_font.render(f"Flags Remaining: {get_remaining_flags()}", True, get_current_theme()['text'])
         x = WIDTH - remaining_flags_text.get_width() - 10
         y = HEIGHT - remaining_flags_text.get_height() - 10
         screen.blit(remaining_flags_text, (x, y))
@@ -966,22 +1012,22 @@ while running:
     # SIGNUP screen UI
     elif state == "signup":
         # Set the prompt
-        prompt = small_font.render("Enter username (Enter submit, 0 back):", True, WHITE)
+        prompt = small_font.render("Enter username (Enter submit, 0 back):", True, get_current_theme()['text'])
         # Set the x position of the prompt
         screen.blit(prompt, (WIDTH // 2 - prompt.get_width() // 2, HEIGHT // 2 - 40))
         # Set the typed input
-        typed = small_font.render(signup_input, True, WHITE)
+        typed = small_font.render(signup_input, True, get_current_theme()['text'])
         # Draw the typed input
         screen.blit(typed, (WIDTH // 2 - typed.get_width() // 2, HEIGHT // 2))
 
     # SET_PFP screen UI
     elif state == "set_pfp":
         # Set the prompt
-        prompt = small_font.render("Enter image path (Enter submit, 0 back):", True, WHITE)
+        prompt = small_font.render("Enter image path (Enter submit, 0 back):", True, get_current_theme()['text'])
         # Draw the prompt
         screen.blit(prompt, (WIDTH // 2 - prompt.get_width() // 2, HEIGHT // 2 - 60))
         # Set the typed input
-        typed = small_font.render(setpfp_input, True, WHITE)
+        typed = small_font.render(setpfp_input, True, get_current_theme()['text'])
         # Draw the typed input
         screen.blit(typed, (WIDTH // 2 - typed.get_width() // 2, HEIGHT // 2 - 20))
         # If there is an error, show it in red below the input
@@ -999,11 +1045,11 @@ while running:
         draw_game_end_message(screen, True)
 
         # playing status
-        playinginfo = small_font.render("Current Status: WIN", True, WHITE)
+        playinginfo = small_font.render("Current Status: WIN", True, get_current_theme()['text'])
         screen.blit(playinginfo, (10, 10))
         
         # Display final time
-        timer_text = small_font.render(f"Time: {game_time.get_elapsed_time()}", True, WHITE)
+        timer_text = small_font.render(f"Time: {game_time.get_elapsed_time()}", True, get_current_theme()['text'])
         screen.blit(timer_text, (10, 40))
         
         # Profile picture, username, and high score
@@ -1027,11 +1073,11 @@ while running:
         draw_game_end_message(screen, False)
 
         # playing status
-        playinginfo = small_font.render("Current Status: LOSE", True, WHITE)
+        playinginfo = small_font.render("Current Status: LOSE", True, get_current_theme()['text'])
         screen.blit(playinginfo, (10, 10))
         
         # Display final time
-        timer_text = small_font.render(f"Time: {game_time.get_elapsed_time()}", True, WHITE)
+        timer_text = small_font.render(f"Time: {game_time.get_elapsed_time()}", True, get_current_theme()['text'])
         screen.blit(timer_text, (10, 40))
         
         # Profile picture, username, and high score

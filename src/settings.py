@@ -72,6 +72,48 @@ DIRS8 = [(-1, -1), (-1, 0), (-1, 1),
 
 CONFETTI_TARGET = 180 # Set number of particles to generation
 
+# Theme system
+DARK_THEME = {
+    'background': (0, 0, 0),          # BLACK
+    'text': (255, 255, 255),          # WHITE  
+    'grid_tile': (100, 100, 100),     # GRAY
+    'grid_revealed': (200, 200, 200), # LIGHT_GRAY
+    'grid_border': (0, 0, 0),         # BLACK
+    'button_bg': (100, 100, 100),     # GRAY
+    'button_hover': (150, 150, 150),  # Lighter gray
+    'notification_bg': (45, 45, 45),  # Dark gray for message boxes
+    'notification_border': (255, 255, 255), # WHITE border
+}
+
+LIGHT_THEME = {
+    'background': (245, 245, 220),    # Beige
+    'text': (32, 32, 32),            # Much darker gray for better readability
+    'grid_tile': (180, 180, 180),    # Medium gray - more contrast
+    'grid_revealed': (255, 255, 255), # Pure white - maximum contrast
+    'grid_border': (64, 64, 64),     # Dark gray
+    'button_bg': (200, 200, 200),    # Light gray
+    'button_hover': (180, 180, 180), # Darker gray
+    'light_button_bg': (150, 150, 150), # Lighter gray for better contrast
+    'light_button_hover': (130, 130, 130), # Even lighter hover
+    'notification_bg': (220, 220, 220), # Light gray for message boxes
+    'notification_border': (64, 64, 64), # Dark gray border
+}
+
+# Current theme (defaults to dark)
+current_theme = DARK_THEME
+
+def switch_theme(theme_name):
+    """Switch between dark and light themes"""
+    global current_theme
+    if theme_name == "dark":
+        current_theme = DARK_THEME
+    else:
+        current_theme = LIGHT_THEME
+
+def get_current_theme():
+    """Get the current theme dictionary"""
+    return current_theme
+
 
 
 

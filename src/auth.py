@@ -12,8 +12,8 @@ class AuthContext:
     {
       "current_user": "alice" | "",
       "users": {
-        "alice": {"token": "...", "pfp_path": "...", "high_score": 0},
-        "bob": {"token": "...", "pfp_path": "...", "high_score": 0}
+        "alice": {"token": "...", "pfp_path": "...", "high_score": 0, "theme": "light"},
+        "bob": {"token": "...", "pfp_path": "...", "high_score": 100, "theme": "dark"}
       }
     }
     """
@@ -152,4 +152,34 @@ class AuthContext:
             rec = users.get(cu) or {}
             rec["token"] = ""
         self._store["current_user"] = ""
+        self._save_user()
+
+    def get_theme_preference(self) -> str:
+        # Get the current user
+        cu = self._store.get("current_user") or ""
+        # Get the users dictionary
+        users = self._store.get("users", {})
+        # If the current user exists and the users dictionary is a dictionary, get the record for the current user
+        if cu and isinstance(users, dict):
+            # Get the record for the current user
+            rec = users.get(cu) or {}
+            # Get the theme preference from the record
+            theme = rec.get("theme", "dark")
+            # If the theme preference is in the list of allowed themes, return it, otherwise return dark
+            return theme if theme in ["dark", "light"] else "dark"
+        # If the current user does not exist or the users dictionary is not a dictionary, return dark
+        return "dark"  # Guest users get dark mode
+
+    def set_theme_preference(self, theme: str) -> None:
+        # Set the current user's theme preference
+        cu = self._store.get("current_user") or ""
+        if not cu:
+            return  # Guest users can't save preferences
+        # Get the users dictionary
+        users = self._store.setdefault("users", {})
+        # Get the record for the current user
+        rec = users.setdefault(cu, {"token": "", "pfp_path": "", "high_score": 0, "theme": "dark"})
+        # Set the theme preference in the record
+        rec["theme"] = theme if theme in ["dark", "light"] else "dark"
+        # Save the user to the store
         self._save_user()
