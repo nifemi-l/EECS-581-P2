@@ -74,7 +74,7 @@ class SFX:
             music_choice = background_music_choice[:background_music_choice.index('-')].replace("_"," ")
             music_choice = ''.join([i for i in music_choice if not i.isdigit()])
             choice = music_choice[1:]
-        self.background_music = mixer.Sound(os.path.join(sound_dir, background_music_choice))
+        self.background_music = mixer.Sound(os.path.join(self.sound_dir, background_music_choice))
         self.music_channel.stop()
         self.music_channel.play(self.background_music, loops=-1)
 
