@@ -8,7 +8,6 @@
 # Created by Nevan Snider on Sept 3rd, with contributions from Evan Rogerson, Spencer Rodenberg, Kyle Whitmer, and Karsten Wolter
 
 import pygame  # import pygame, the main GUI we used in order to create images and track mouse clicks.
-from pygame import mixer
 import random  # import random to randomly pick mine locations
 import os # Access visual asset path
 from collections import deque  # Queue for flood-fill
@@ -17,12 +16,11 @@ from game_assets import flag_sprite, mines_sprite, numbers_sprites, load_circula
 from auth import AuthContext  # simple local auth (token/user.json)
 from pfp_helper import save_profile_image  # copy chosen image to assets
 from game_timer import GameTimer # Track game time
-from sfx import SFX
 from ai import ai_solver
 from time import sleep
 
 from settings import (
-    clock, screen, WIDTH, HEIGHT,
+    clock, screen, WIDTH, HEIGHT, sfx, 
     WHITE, BLACK, GREEN, RED, LIGHT_RED, DARK_RED, PURPLE, GRAY, LIGHT_GRAY, CONFETTI_COLORS, BLUE,
     font, small_font, tiny_font,
     MENU, PLAYING, WIN, LOSE,
@@ -465,7 +463,6 @@ def draw_high_score_notification(surface):
 
 # Main Game Loop
 setup_grid() # Setup the grid
-sfx = SFX(pygame.mixer)
 sfx.start_bgmusic()
 
 running = True
