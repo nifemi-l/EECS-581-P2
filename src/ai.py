@@ -63,7 +63,7 @@ class ai_solver():
         is_new_board = self.is_first_move()
         if is_new_board:
             print("Making first move. Revealing center square")
-            self.revealed[4][4] = True
+            self.rand_reveal()
 
 
         # NOTE: Swapping step 1 and step 2 tends to perform better, more testing is needed.
@@ -162,25 +162,20 @@ class ai_solver():
                             return action_i, action_j, "reveal"
         return None, None, None
 
-    
     def rand_reveal(self):
-        # Randomly generate a location on the grid
+        # Add all unrevealed and unflagged squares on the board into a "candidate list".
+        candidate_squares = []
         for i in range(10):
             for j in range(10):
-                rand_i = random.randint(0, 9)
-                rand_j = random.randint(0, 9)
-                # Make move with random grid location. If it is already revealed, no move is made and a new random square is checked.
-                if self.revealed[rand_i][rand_j] == False:
-                    # If the random square is not revealed, remove flag if it has one, and reveal it.
-                    if self.flagged[rand_i][rand_j] == True:
-                        return rand_i, rand_j, "reveal"
-                    # Reveals the square and then returns to end its move.
-                    return rand_i, rand_j, "reveal"
-
-        # If no valid move is found
-        return None, None, None 
-
-    
+                if self.revealed[i][j] == False and self.flagged[i][j] == False:
+                    candidate_squares.append((i, j))
+        
+        # Randomly selects a square from the candidate list and reveals it.
+            # Subtract 1 from length since randint includes the upper endpoint.
+        options = len(candidate_squares) - 1
+        rand_option = random.randint(0, options)
+        rand_i, rand_j = candidate_squares[rand_option]
+        return rand_i, rand_j, "reveal"   
 
     """
     Some helper functions for the helper functions
