@@ -24,7 +24,7 @@ from time import sleep
 from settings import (
     clock, screen, WIDTH, HEIGHT,
     WHITE, BLACK, GREEN, RED, LIGHT_RED, DARK_RED, PURPLE, GRAY, LIGHT_GRAY, CONFETTI_COLORS, BLUE,
-    font, small_font,
+    font, small_font, tiny_font,
     MENU, PLAYING, WIN, LOSE,
     GRID_SIZE, TILE_SIZE, GRID_START_X, GRID_START_Y,
     MINE, DIRS8, CONFETTI_TARGET, ASSETS_DIR,
@@ -97,6 +97,7 @@ logout_button = Button(WIDTH // 2 - 100, 380, 200, 60, "Logout", RED, (255, 0, 0
 quit_button = Button(WIDTH // 2 - 100, 450, 200, 60, "Quit", RED, (255, 0, 0))  # Quit
 plus_button = Button(WIDTH // 2 + 60, 550, 60, 60, "+", GRAY, (150, 150, 150))  # Inc bombs
 minus_button = Button(WIDTH // 2 - 120, 550, 60, 60, "-", GRAY, (150, 150, 150))  # Dec bombs
+mute_button = Button(WIDTH - 120, HEIGHT - 60 , 100, 40 , "Mute", GRAY, (150, 150, 150)) # Mode menu: manual
 
 
 # define the grid that the thing will be mapped to
@@ -114,6 +115,43 @@ squarePickList = [0 for i in range(100)]  # allow the board to pick any item to 
 
 first_click_done = False
 
+def draw_sfx_info(surface):
+    # Panel geometry (bottom-center)
+    panel_w, panel_h = 200, 120
+    panel_x = WIDTH // 2 - panel_w // 2
+    panel_y = HEIGHT - panel_h - 90  # keep clear of bottom controls
+
+    panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
+
+    # Background + border (rounded corners)
+    pygame.draw.rect(surface, (45, 45, 45), panel_rect, border_radius=12)
+    pygame.draw.rect(surface, WHITE, panel_rect, 2, border_radius=12)
+
+    # Title
+    title = "Now Playing an 8-bit Version of:"
+    title_surf = tiny_font.render(title, True, WHITE)
+    surface.blit(title_surf, (panel_rect.centerx - title_surf.get_width() // 2,
+                              panel_rect.top + 12))
+
+    # Message (single line, clamp to width with quick ellipsis)
+    pad = 14
+    msg_left = panel_rect.left + pad
+    msg_right_reserved = 140  # space for the Skip button on the right
+    max_text_w = panel_w - (pad + msg_right_reserved + pad)
+    msg_y = panel_rect.top + 12 + title_surf.get_height() + 8
+
+    message_surface = tiny_font.render(sfx.song_name, True, WHITE)
+    surface.blit(message_surface, (msg_left, msg_y))
+
+    # Skip button (bottom-right inside the panel)
+    btn_w, btn_h = 120, 44
+    btn_x = panel_rect.right - pad - btn_w
+    btn_y = panel_rect.bottom - pad - btn_h
+    mute_button.rect.topleft = (btn_x, btn_y)
+    mute_button.draw(surface, tiny_font)
+
+
+    # Skip button (bottom-right i
 def setup_grid():
     # reset the grid back to the original state
     for i in range(10):  # iterate over rows
@@ -435,6 +473,7 @@ while running:
     screen.fill(BLACK)
 
     # Handle AI updates outside the user input processing and response loop
+    draw_sfx_info(screen)
     if state == PLAYING:
         # --- AI MOVE (automatic or interactive) ---
         if ai and not player_turn:
@@ -547,6 +586,8 @@ while running:
                 print(grid)
 
                 # generate a list of squares that can be chosen
+            elif mute_button.is_clicked(event):
+                sfx.music_channel.set_volume(0)
 
 
             # logged-in only: change pfp
@@ -759,6 +800,7 @@ while running:
         primary_buttons = [start_button]
         # Add the settings button
         primary_buttons.append(settings_button)
+        primary_buttons.append(mute_button)
         if auth.is_logged_in():
             # if the user is logged in, add the change pfp and logout buttons
             primary_buttons += [change_pfp_button, logout_button]

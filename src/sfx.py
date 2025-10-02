@@ -7,16 +7,23 @@ from settings import ASSETS_DIR, NUM_DIR, SOUND_DIR
 class SFX:
     def __init__(self, mixer):
         try: 
+            # Create channel strictly for sound effects and music
             self.sfx_channel = mixer.Channel(0)
-            self.sfx_channel.set_volume(0.3)
             self.music_channel = mixer.Channel(1)
-            mixer.set_reserved(1)
+            mixer.set_reserved(1) # Ensure nothing else can play on music channel
+            
+            # Set channel volumes
+            self.sfx_channel.set_volume(0.3)
             self.music_channel.set_volume(0.1)
 
+            # Choose random background music from directory, create song name for printing
             background_music_choice = random.choice(os.listdir(os.path.join(SOUND_DIR, "bgmusic")))
-            print(f"{os.path.join(SOUND_DIR, 'bgmusic', background_music_choice)}")
-            self.background_music = mixer.Sound(os.path.join(SOUND_DIR, "bgmusic", background_music_choice))
+            music_choice = background_music_choice[:background_music_choice.index('-')].replace("_"," ")
+            music_choice = ''.join([i for i in music_choice if not i.isdigit()])
+            self.song_name = self.song_name[1:]
 
+            # Create pygame sound objects for music and game sounds
+            self.background_music = mixer.Sound(os.path.join(SOUND_DIR, "bgmusic", background_music_choice))
             self.bomb_clicked_sound = mixer.Sound(os.path.join(SOUND_DIR,"bomb-clicked.mp3"))
             self.flag_placed_sound = mixer.Sound(os.path.join(SOUND_DIR,"flag-placed.mp3"))
             self.loss_sound = mixer.Sound(os.path.join(SOUND_DIR,"loss.mp3"))
