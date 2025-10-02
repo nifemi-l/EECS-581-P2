@@ -40,6 +40,7 @@ CONFETTI_COLORS = [(255, 99, 132), (255, 205, 86), (75, 192, 192), (54, 162, 235
 # Fonts
 font = pygame.font.Font(None, 60)  # Bigger font for titles
 small_font = pygame.font.Font(None, 36)  # Smaller font for buttons/text
+tiny_font = pygame.font.Font(None, 18)  # Tiny font for sfx info
 
 # Game states
 MENU = "menu"  # define the menu state
