@@ -1,10 +1,23 @@
-
+from sfx import SFX
 import pygame 
 from pygame import mixer
 import os 
 
+# define visual asset path variables
+# Get the project root directory (one level up from the src directory)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ASSETS_DIR = os.path.join(PROJECT_ROOT, "assets")
+NUM_DIR = os.path.join(ASSETS_DIR, "numbers")
+SOUND_DIR = os.path.join(ASSETS_DIR, "sounds")
+
 # Screen setup
+try:
+    pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=512)
+except: 
+    pass
+
 pygame.init()  # start pygame
+sfx = SFX(SOUND_DIR)
 clock = pygame.time.Clock() # for smooth animation
 
 WIDTH, HEIGHT = 850, 650  # Set height and width of the screen
@@ -60,10 +73,4 @@ CONFETTI_TARGET = 180 # Set number of particles to generation
 
 
 
-# define visual asset path variables
-# Get the project root directory (one level up from the src directory)
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ASSETS_DIR = os.path.join(PROJECT_ROOT, "assets")
-NUM_DIR = os.path.join(ASSETS_DIR, "numbers")
-SOUND_DIR = os.path.join(ASSETS_DIR, "sounds")
 
