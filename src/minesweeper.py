@@ -892,6 +892,15 @@ while running:
             # Draw the game time info
             screen.blit(timer_info, (10, 40))
 
+        # Turn display
+        if auth.is_logged_in():
+            username = auth.get_username()
+        else:
+            username = "Player"
+        turn_string = "Turn: " + (username if player_turn else "AI")
+        turn_display = small_font.render(turn_string, True, WHITE)
+        screen.blit(turn_display, (10, HEIGHT - 60))
+
         # Profile picture, username, and high score
         draw_profile_and_info(screen)
 
