@@ -6,6 +6,7 @@ import random
 class SFX:
     def __init__(self, sound_dir):
         try: 
+            self.sound_dir = sound_dir
             mixer.init()
             
             self.sfx_channel = mixer.Channel(0)
