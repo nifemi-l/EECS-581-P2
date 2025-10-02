@@ -20,7 +20,7 @@ class SFX:
             background_music_choice = random.choice(os.listdir(os.path.join(SOUND_DIR, "bgmusic")))
             music_choice = background_music_choice[:background_music_choice.index('-')].replace("_"," ")
             music_choice = ''.join([i for i in music_choice if not i.isdigit()])
-            self.song_name = self.song_name[1:]
+            self.song_name = music_choice[1:]
 
             # Create pygame sound objects for music and game sounds
             self.background_music = mixer.Sound(os.path.join(SOUND_DIR, "bgmusic", background_music_choice))
@@ -31,6 +31,7 @@ class SFX:
             self.square_revealed_sound = mixer.Sound(os.path.join(SOUND_DIR,"square-revealed.mp3"))
             self.flagg_popped_sound = mixer.Sound(os.path.join(SOUND_DIR, "flag-popped.mp3"))
 
+            self.muted = False
             self.enabled = True            
         except:
             self.enabled = False
@@ -65,5 +66,16 @@ class SFX:
     def start_bgmusic(self):
         if self.enabled:
             self.music_channel.play(self.background_music, loops=-1)
+    def change_song(self):
+        choice = ""
+        background_music_choice = ""
+        while choice is not self.song_name: 
+            background_music_choice = random.choice(os.listdir(os.path.join(self.sound_dir, "bgmusic")))
+            music_choice = background_music_choice[:background_music_choice.index('-')].replace("_"," ")
+            music_choice = ''.join([i for i in music_choice if not i.isdigit()])
+            choice = music_choice[1:]
+        self.background_music = mixer.Sound(os.path.join(sound_dir, background_music_choice))
+        self.music_channel.stop()
+        self.music_channel.play(self.background_music, loops=-1)
 
 

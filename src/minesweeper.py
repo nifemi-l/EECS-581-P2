@@ -98,6 +98,7 @@ quit_button = Button(WIDTH // 2 - 100, 450, 200, 60, "Quit", RED, (255, 0, 0))  
 plus_button = Button(WIDTH // 2 + 60, 550, 60, 60, "+", GRAY, (150, 150, 150))  # Inc bombs
 minus_button = Button(WIDTH // 2 - 120, 550, 60, 60, "-", GRAY, (150, 150, 150))  # Dec bombs
 mute_button = Button(WIDTH - 120, HEIGHT - 60 , 100, 40 , "Mute", GRAY, (150, 150, 150)) # Mode menu: manual
+skip_button = Button(WIDTH - 240, HEIGHT - 60 , 100, 40 , "Skip", GRAY, (150, 150, 150)) # Mode menu: manual
 
 
 # define the grid that the thing will be mapped to
@@ -117,9 +118,9 @@ first_click_done = False
 
 def draw_sfx_info(surface):
     # Panel geometry (bottom-center)
-    panel_w, panel_h = 200, 120
-    panel_x = WIDTH // 2 - panel_w // 2
-    panel_y = HEIGHT - panel_h - 90  # keep clear of bottom controls
+    panel_w, panel_h = WIDTH // 4, WIDTH // 6
+    panel_x = WIDTH - panel_w 
+    panel_y = HEIGHT - panel_h 
 
     panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
 
@@ -134,21 +135,24 @@ def draw_sfx_info(surface):
                               panel_rect.top + 12))
 
     # Message (single line, clamp to width with quick ellipsis)
-    pad = 14
-    msg_left = panel_rect.left + pad
-    msg_right_reserved = 140  # space for the Skip button on the right
-    max_text_w = panel_w - (pad + msg_right_reserved + pad)
-    msg_y = panel_rect.top + 12 + title_surf.get_height() + 8
+    msg = sfx.song_name
+    title_surf = tiny_font.render(msg, True, WHITE)
+    surface.blit(title_surf, (panel_rect.centerx - title_surf.get_width() // 2,
+                              panel_rect.top + 24))
 
-    message_surface = tiny_font.render(sfx.song_name, True, WHITE)
-    surface.blit(message_surface, (msg_left, msg_y))
-
+    msg = "- A Kind Of Blue - Miles Davis"
+    title_surf = tiny_font.render(msg, True, WHITE)
+    surface.blit(title_surf, (panel_rect.centerx - title_surf.get_width() // 2,
+                              panel_rect.top + 36))
+    pad = 1
     # Skip button (bottom-right inside the panel)
-    btn_w, btn_h = 120, 44
+    btn_w, btn_h = 100, 44
     btn_x = panel_rect.right - pad - btn_w
     btn_y = panel_rect.bottom - pad - btn_h
     mute_button.rect.topleft = (btn_x, btn_y)
     mute_button.draw(surface, tiny_font)
+    skip_button.rect.topleft = (btn_x - btn_w, btn_y)
+    skip_button.draw(surface, tiny_font)
 
 
     # Skip button (bottom-right i
@@ -586,8 +590,17 @@ while running:
                 print(grid)
 
                 # generate a list of squares that can be chosen
+            elif skip_button.is_clicked(event):
+                sfx.change_song()
             elif mute_button.is_clicked(event):
-                sfx.music_channel.set_volume(0)
+                if not sfx.muted:
+                    mute_button.text = "Unmute"
+                    sfx.music_channel.set_volume(0)
+                    sfx.muted = True
+                else:
+                    mute_button.text = "Mute"
+                    sfx.music_channel.set_volume(0.1)
+                    sfx.muted = False
 
 
             # logged-in only: change pfp
@@ -800,7 +813,6 @@ while running:
         primary_buttons = [start_button]
         # Add the settings button
         primary_buttons.append(settings_button)
-        primary_buttons.append(mute_button)
         if auth.is_logged_in():
             # if the user is logged in, add the change pfp and logout buttons
             primary_buttons += [change_pfp_button, logout_button]
