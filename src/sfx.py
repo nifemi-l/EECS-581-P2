@@ -6,11 +6,14 @@ from settings import ASSETS_DIR, NUM_DIR, SOUND_DIR
 
 class SFX:
     def __init__(self, mixer):
-        self.sfx_channel = mixer.Channel(0)
-        self.sfx_channel.set_volume(0.3)
-        self.music_channel = mixer.Channel(1)
-        mixer.set_reserved(1)
-        self.music_channel.set_volume(0.1)
+        try: 
+            self.sfx_channel = mixer.Channel(0)
+            self.sfx_channel.set_volume(0.3)
+            self.music_channel = mixer.Channel(1)
+            mixer.set_reserved(1)
+            self.music_channel.set_volume(0.1)
+        except:
+            pass
         self.enabled = True
 
         try:
@@ -26,6 +29,10 @@ class SFX:
             self.flagg_popped_sound = mixer.Sound(os.path.join(SOUND_DIR, "flag-popped.mp3"))
         except:
             self.enabled = False
+
+    def stop_sfx(self):
+        if self.enabled:
+            self.sfx_channel.stop()
 
     def ensure_bgmusic(self):
         if not self.music_channel.get_busy() and self.enabled:
