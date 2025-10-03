@@ -702,6 +702,8 @@ while running:
                                 sfx.play_square_revealed()
                                 counts = compute_counts(grid)
                                 first_click_done = True
+                                # Remake the ai object with the new board
+                                ai = ai_solver(difficulty, grid, counts, revealed, flagged)
                                 # Start the game timer
                                 game_time.start()
                             if grid[row][col] == MINE:  # Check for loss
