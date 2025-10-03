@@ -145,7 +145,7 @@ def draw_sfx_info(surface):
     # Panel geometry (bottom-center)
     panel_w, panel_h = WIDTH // 4, WIDTH // 6 
     panel_x = WIDTH - panel_w 
-    panel_y = HEIGHT - panel_h - 200
+    panel_y = HEIGHT - panel_h - 80
 
     panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
 
@@ -577,14 +577,15 @@ while running:
         if skip_button.is_clicked(event):
             sfx.change_song()
         elif mute_button.is_clicked(event):
-            if not sfx.muted:
-                mute_button.text = "Unmute"
-                sfx.music_channel.set_volume(0)
-                sfx.muted = True
-            else:
-                mute_button.text = "Mute"
-                sfx.music_channel.set_volume(0.1)
-                sfx.muted = False
+            if sfx.enabled:
+                if not sfx.muted:
+                    mute_button.text = "Unmute"
+                    sfx.music_channel.set_volume(0)
+                    sfx.muted = True
+                else:
+                    mute_button.text = "Mute"
+                    sfx.music_channel.set_volume(0.1)
+                    sfx.muted = False
 
         # MENU state logic
         if state == MENU:

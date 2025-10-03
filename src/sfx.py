@@ -80,6 +80,8 @@ class SFX:
             self.music_channel.play(self.background_music, loops=-1)
 
     def change_song(self):
+        if not self.enabled:
+            return
         # Stop music before change
         self.music_channel.stop()
         choice =None
