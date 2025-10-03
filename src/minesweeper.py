@@ -740,8 +740,8 @@ while running:
                                                 show_high_score_notification = True # Global toggle
                                                 # Set the notification start time to the current time
                                                 notification_start_time = pygame.time.get_ticks()
-                        if mode == AI_INTERACTIVE:
-                            player_turn = False
+                            if mode == AI_INTERACTIVE:
+                                player_turn = False
                     elif event.button == 3:  # a right click
                         # check that the flagged tile isn't revealed
                         if not revealed[row][col]:
