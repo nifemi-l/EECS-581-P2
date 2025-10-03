@@ -145,7 +145,7 @@ def draw_sfx_info(surface):
     # Panel geometry (bottom-center)
     panel_w, panel_h = WIDTH // 4, WIDTH // 6 
     panel_x = WIDTH - panel_w 
-    panel_y = HEIGHT - panel_h - 200
+    panel_y = HEIGHT - panel_h - 80
 
     panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
 
