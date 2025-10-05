@@ -1,7 +1,23 @@
+"""
+File Name: settings.py
+Module: src
+Function: Store a series of constants and their related values for use throughout the application. Also initializes pygame.
+Inputs: Assets from the assets folder to create constant path values.
+Outputs: Initialized pygame, mixer. Any constant values that are imported by other areas of the application.
+Authors:
+    Blake Carlson
+    Jack Bauer
+    Nifemi Lawal
+    Dellie Wright
+Creation Date: 9/23/2025
+
+NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
+"""
+# Import sound effects class, pygame, and pygame's audio mixer
 from sfx import SFX
 import pygame 
 from pygame import mixer
-import os 
+import os # For file path logic
 
 # define visual asset path variables
 # Get the project root directory (one level up from the src directory)

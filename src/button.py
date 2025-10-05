@@ -1,3 +1,16 @@
+"""
+File Name: button.py
+Module: src
+Function: Define the Button class to represent a clickable button that takes some action when clicked for use in the in-game menus.
+Inputs: None
+Outputs: None
+Authors:
+    Nifemi Lawal
+Creation Date: 9/25/2025
+
+NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
+"""
+
 import pygame
 from settings import WHITE, get_current_theme
 # Button Class
