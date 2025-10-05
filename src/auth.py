@@ -1,3 +1,16 @@
+"""
+File Name: auth.py
+Module: src
+Function: Define the AuthContext class to manage user logins and logouts, profile pictures, and high scores.
+Inputs: None
+Outputs: None
+Authors:
+    Nifemi Lawal
+Creation Date: 9/26/2025
+
+NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
+"""
+
 import os  # used to build file paths
 import json  # used to read and write small local data files
 import uuid  # used to make a simple random token

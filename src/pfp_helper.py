@@ -1,3 +1,16 @@
+"""
+File Name: pfp_helper.py
+Module: src
+Function: Define a helper function used to save user profile images and provide the new path.
+Inputs: None.
+Outputs: None.
+Authors:
+    Nifemi Lawal
+Creation Date: 9/26/2025
+
+NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
+"""
+
 import os  # Used to build full asset paths
 import shutil  # Used to copy files into the assets folder
 from typing import Optional  # return type hint

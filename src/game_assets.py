@@ -1,3 +1,18 @@
+"""
+File Name: game_assets.py
+Module: src
+Function: Define functions to load a standard image and a profile image. Provides a reference to the sprites for flags, mines, and numbers.
+Inputs: The flag, mine, and numbers sprite images.
+Outputs: A reference to the flag, mine, and numbers sprites.
+Authors:
+    Blake Carlson
+    Nifemi Lawal
+    Dellie Wright
+Creation Date: 9/25/2025
+
+NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
+"""
+
 import os
 import random
 import pygame

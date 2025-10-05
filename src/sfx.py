@@ -1,11 +1,31 @@
-from pygame import mixer
-import pygame
-import os
-import random
+"""
+File Name: sfx.py
+Module: src
+Function: Define the SFX class used to manage the sound and music system through its methods.
+Inputs: None.
+Outputs: None.
+Authors:
+    Blake Carlson
+    Logan Smith
+    Jack Bauer
+    Nifemi Lawal
+    Dellie Wright
+Creation Date: 9/29/2025
+
+NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
+"""
+
+from pygame import mixer # import pygame's audio system
+import pygame # import pygame
+import os # import os for path related tools
+import random # so we can randomly select a song to play 
 
 
 class SFX:
     def __init__(self, sound_dir):
+        # Use a try-except block so that if there are any initialization errors (such as in the case the host lacks
+        # an audio driver) the program won't crash. Instead, we appropriately set the "enabled" flag to disable 
+        # the SFX system. 
         try: 
             # Create channel strictly for sound effects and music
             self.sound_dir = sound_dir
@@ -42,6 +62,7 @@ class SFX:
             self.enabled = False
 
     def stop_sfx(self):
+        # Stop any sounds from being played
         if self.enabled:
             self.sfx_channel.stop()
 

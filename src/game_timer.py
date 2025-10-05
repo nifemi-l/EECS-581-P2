@@ -1,3 +1,16 @@
+"""
+File Name: game_timer.py
+Module: src
+Function: Define the GameTimer class used to start, stop, and manage the timer during gameplay. This is what is used to determine player scores.
+Inputs: None
+Outputs: None
+Authors:
+    Nifemi Lawal
+Creation Date: 9/29/2025
+
+NOTE: All code in the file was authored by 1 or more of the authors. No outside sources were used for code
+"""
+
 import pygame
 
 class GameTimer:
