@@ -57,7 +57,8 @@ NOTIFICATION_DURATION = 3.0  # How long to show notification in seconds
 auth = AuthContext()
 
 PROFILE_DIAMETER = 56  # profile picture diameter
-PROFILE_MARGIN = 20    # margin from edge
+PROFILE_MARGIN = 65    # margin from edge
+PROFILE_TOP_MARGIN = 10  # margin from top edge
 
 def resolve_profile_path():  # Pick user pfp if logged in, else guest
     # Check if the user is logged in
@@ -447,7 +448,7 @@ def draw_profile_and_info(surface):
     if profile_surface:
         # Set the x and y position of the profile picture
         px = WIDTH - PROFILE_MARGIN - PROFILE_DIAMETER
-        py = PROFILE_MARGIN
+        py = PROFILE_TOP_MARGIN
         surface.blit(profile_surface, (px, py)) # Draw the profile picture at the calculated position on the screen
         
         # Display username and high score below profile picture if logged in
