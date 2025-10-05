@@ -1,11 +1,15 @@
-# Classes include the following:
-#   Button class: used to detect and respond to mouse clicks
+# Filename: Minesweeper.py
+# Module: src
+# Function: Run the "Minesweeper" game and its main loop.
+# Primary functions include the following:
 #   get grid pos funtion: used to figure out where a mouse click coresponds to which square in teh 2d array strucutre
 #   draw grid fuinction: used to draw the grid and the items in it
 #   get_remaining_flags func: used to calaculate and display how many mines are left if the user has been correct in flag placement
+#   Others: See their respective declarations, definitions, and documentation for further detail. They are not intended for use outside of this file.
 # The program takes in mouse clicks from the user as input and outputs the current state of the minsweeper board
 # No external code was used (no Chat GPT or stack overflow)
 # Created by Nevan Snider on Sept 3rd, with contributions from Evan Rogerson, Spencer Rodenberg, Kyle Whitmer, and Karsten Wolter
+# With additions and edits by: Blake Carlson, Nifemi Lawal, Logan Smith, Jack Bauer, Dellie Wright
 
 import pygame  # import pygame, the main GUI we used in order to create images and track mouse clicks.
 import random  # import random to randomly pick mine locations
